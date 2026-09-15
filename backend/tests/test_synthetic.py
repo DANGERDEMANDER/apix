@@ -8,11 +8,15 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from apix.collectors.festivals import load_festivals
-from apix.collectors.synthetic import SyntheticConfig, build_collectors
+from apix.collectors.synthetic import (
+    SyntheticCollector,
+    SyntheticConfig,
+    build_collectors,
+)
 from apix.settings import get_settings
 
 
-def _collector(name: str = "IndiGo", seed: int = 42) -> object:
+def _collector(name: str = "IndiGo", seed: int = 42) -> SyntheticCollector:
     settings = get_settings()
     festivals = load_festivals(settings.env.config_dir)
     return build_collectors((name,), SyntheticConfig(seed=seed), festivals)[0]

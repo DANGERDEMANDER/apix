@@ -53,14 +53,14 @@ async def run_backtest(session: AsyncSession) -> BacktestResult:
     # Build {month: mean_apix} and {month: mean_dgca_fare}.
     # We group by calendar month and average across routes if multiple rows.
     apix_by_month: dict[tuple[int, int], list[Decimal]] = {}
-    for r in index_rows:
-        if r.value is None:
+    for iv in index_rows:
+        if iv.value is None:
             continue
-        apix_by_month.setdefault((r.date.year, r.date.month), []).append(r.value)
+        apix_by_month.setdefault((iv.date.year, iv.date.month), []).append(iv.value)
 
     dgca_by_month: dict[tuple[int, int], list[Decimal]] = {}
-    for r in ref_rows:
-        dgca_by_month.setdefault((r.month.year, r.month.month), []).append(r.avg_fare)
+    for dr in ref_rows:
+        dgca_by_month.setdefault((dr.month.year, dr.month.month), []).append(dr.avg_fare)
 
     common_months = sorted(set(apix_by_month.keys()) & set(dgca_by_month.keys()))
     if not common_months:

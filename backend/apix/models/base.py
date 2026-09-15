@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from enum import Enum
 
 from sqlalchemy import DateTime, MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -37,6 +38,6 @@ def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
-def _enum_values(enum_cls: type) -> list[str]:
+def _enum_values(enum_cls: type[Enum]) -> list[str]:
     """Use .value instead of .name for SQLAlchemy Enum serialization."""
     return [e.value for e in enum_cls]
