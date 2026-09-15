@@ -96,9 +96,7 @@ def compute_index(
             weight_covered=weight_covered,
             routes_included=len(present),
             status=IndexStatus.INSUFFICIENT_COVERAGE,
-            withheld_reason=(
-                f"weight_covered={weight_covered} below threshold {min_coverage}"
-            ),
+            withheld_reason=(f"weight_covered={weight_covered} below threshold {min_coverage}"),
         )
 
     # Numerator: ? w_i ? R(i,t), then divide by weight_covered.
@@ -118,9 +116,7 @@ def compute_index(
         r = route_prices[rid]
         assert r is not None
         relative = r / base_values[rid]
-        contribution = (
-            Decimal("100") * route_weights[rid] * relative / weight_covered
-        )
+        contribution = Decimal("100") * route_weights[rid] * relative / weight_covered
         label = route_labels.get(rid, f"route_{rid}")
         contributions[label] = float(contribution.quantize(Decimal("0.0001")))
 

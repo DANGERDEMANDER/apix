@@ -1,4 +1,4 @@
-﻿"""Cleaning pipeline (see build spec section 8)."""
+"""Cleaning pipeline (see build spec section 8)."""
 
 from __future__ import annotations
 

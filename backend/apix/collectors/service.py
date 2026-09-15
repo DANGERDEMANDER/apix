@@ -8,7 +8,7 @@ mode is implemented now; replay and live will follow the same insertion path.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,7 +51,7 @@ def _to_decomposition(method: str) -> DecompositionMethod:
 def _collected_at_for(quote: RawQuote) -> datetime:
     """Deterministic collection timestamp derived from the cell, not now()."""
     day = quote.departure_date - timedelta(days=quote.advance_days)
-    return datetime.combine(day, time(6, 0), tzinfo=timezone.utc)
+    return datetime.combine(day, time(6, 0), tzinfo=UTC)
 
 
 async def _insert_quote(
@@ -109,7 +109,7 @@ async def run_synthetic(
 
     run = CollectionRun(
         mode=RunMode.SYNTHETIC,
-        started_at=datetime.now(timezone.utc),
+        started_at=datetime.now(UTC),
         status=RunStatus.RUNNING,
         quotes_collected=0,
         quotes_expected=0,
@@ -136,13 +136,11 @@ async def run_synthetic(
                     )
                     if q is None:
                         continue
-                    await _insert_quote(
-                        session, run.id, route, sources[collector.name], q
-                    )
+                    await _insert_quote(session, run.id, route, sources[collector.name], q)
                     collected += 1
         d = d + timedelta(days=1)
 
-    run.finished_at = datetime.now(timezone.utc)
+    run.finished_at = datetime.now(UTC)
     run.quotes_collected = collected
     run.quotes_expected = expected
     run.status = RunStatus.SUCCESS if collected > 0 else RunStatus.FAILED

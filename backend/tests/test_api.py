@@ -8,7 +8,7 @@ the same session.
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest_asyncio
@@ -53,8 +53,8 @@ async def _seed_min_routes(session: AsyncSession) -> None:
     session.add(
         CollectionRun(
             mode=RunMode.SYNTHETIC,
-            started_at=datetime(2025, 9, 1, 6, 0, tzinfo=timezone.utc),
-            finished_at=datetime(2025, 9, 1, 6, 5, tzinfo=timezone.utc),
+            started_at=datetime(2025, 9, 1, 6, 0, tzinfo=UTC),
+            finished_at=datetime(2025, 9, 1, 6, 5, tzinfo=UTC),
             status=RunStatus.SUCCESS,
             quotes_collected=100,
             quotes_expected=100,
@@ -116,9 +116,7 @@ async def test_contributions_404(client: AsyncClient) -> None:
     assert "error" in r.json()["detail"]
 
 
-async def test_index_with_seeded_value(
-    client: AsyncClient, db_session: AsyncSession
-) -> None:
+async def test_index_with_seeded_value(client: AsyncClient, db_session: AsyncSession) -> None:
     await _seed_min_routes(db_session)
     db_session.add(
         IndexValue(

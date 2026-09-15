@@ -50,9 +50,7 @@ async def test_seed_routes_idempotent(db_session: AsyncSession) -> None:
     assert n_first == 10
     assert n_second == 10
 
-    count = (
-        await db_session.execute(select(func.count()).select_from(Route))
-    ).scalar_one()
+    count = (await db_session.execute(select(func.count()).select_from(Route))).scalar_one()
     assert count == 10
 
 

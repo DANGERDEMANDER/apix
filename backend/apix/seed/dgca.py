@@ -1,4 +1,4 @@
-﻿"""Load data/dgca/reference.csv into dgca_reference. No-op if file absent."""
+"""Load data/dgca/reference.csv into dgca_reference. No-op if file absent."""
 
 from __future__ import annotations
 
@@ -20,9 +20,7 @@ async def seed_dgca_reference(session: AsyncSession) -> int:
     if not _REFERENCE_CSV.is_file():
         return 0
 
-    routes = {
-        r.label: r for r in (await session.execute(select(Route))).scalars().all()
-    }
+    routes = {r.label: r for r in (await session.execute(select(Route))).scalars().all()}
 
     # Clear and reload to keep the table a faithful mirror of the CSV.
     await session.execute(delete(DgcaReference))

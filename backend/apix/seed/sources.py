@@ -14,9 +14,7 @@ from apix.settings import get_settings
 async def seed_sources(session: AsyncSession) -> int:
     settings = get_settings()
 
-    existing = {
-        s.name: s for s in (await session.execute(select(Source))).scalars().all()
-    }
+    existing = {s.name: s for s in (await session.execute(select(Source))).scalars().all()}
 
     written = 0
     for s in settings.sources.sources:

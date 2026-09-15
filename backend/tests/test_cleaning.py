@@ -1,4 +1,4 @@
-﻿"""Phase 4 acceptance tests for the cleaning pipeline.
+"""Phase 4 acceptance tests for the cleaning pipeline.
 
 Each test exercises one rejection reason or one decomposition rule.
 Values are chosen to match the spec section 13 acceptance criteria

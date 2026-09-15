@@ -1,4 +1,4 @@
-﻿"""apix CLI: seed, collect, index."""
+"""apix CLI: seed, collect, index."""
 
 from __future__ import annotations
 
@@ -60,9 +60,7 @@ async def _run_index(from_date: date, to_date: date) -> None:
     async with get_sessionmaker()() as session:
         n_prices = await build_daily_prices(session, from_date, to_date)
         await session.commit()
-        n_daily, n_weekly, n_monthly = await build_indices(
-            session, from_date, to_date
-        )
+        n_daily, n_weekly, n_monthly = await build_indices(session, from_date, to_date)
         await session.commit()
 
     log.info(
@@ -93,9 +91,7 @@ async def _run_backtest() -> None:
     print("Monthly backtest: APix vs DGCA reference")
     print("-" * 60)
     for r in result.rows:
-        print(
-            f"  {r.month}   APix={r.apix_pct_of_base:7.2f}   DGCA={r.dgca_pct_of_base:7.2f}"
-        )
+        print(f"  {r.month}   APix={r.apix_pct_of_base:7.2f}   DGCA={r.dgca_pct_of_base:7.2f}")
     print("-" * 60)
     print(f"  Months compared      : {m.n_months}")
     print(f"  MAPE                 : {m.mape_pct:.2f}%")
@@ -104,6 +100,7 @@ async def _run_backtest() -> None:
     print(f"  Direction match      : {m.direction_match_pct}%")
     print("-" * 60)
     print(f"  {result.provenance_note}")
+
 
 def _parse_date(s: str) -> date:
     try:
@@ -118,9 +115,7 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("seed", help="Seed routes, sources, and DGCA reference")
 
-    collect = sub.add_parser(
-        "collect", help="Collect fare quotes (synthetic mode by default)"
-    )
+    collect = sub.add_parser("collect", help="Collect fare quotes (synthetic mode by default)")
     collect.add_argument("--mode", choices=["synthetic"], default="synthetic")
     collect.add_argument("--from", dest="from_date", type=_parse_date, required=True)
     collect.add_argument("--to", dest="to_date", type=_parse_date, required=True)
@@ -157,5 +152,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
-

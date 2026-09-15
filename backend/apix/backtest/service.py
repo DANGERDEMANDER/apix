@@ -1,4 +1,4 @@
-﻿"""Compare monthly APIx against dgca_reference.
+"""Compare monthly APIx against dgca_reference.
 
 APIx is on index=100 scale; DGCA is on INR scale. To compare them, both are
 re-based to 100 on the first month where both exist.
@@ -15,7 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from apix.backtest.metrics import BacktestMetrics, compute_metrics
 from apix.models.dgca import DgcaReference
 from apix.models.indices import Frequency, IndexStatus, IndexValue, Measure
-from apix.models.routes import Route
 
 
 @dataclass(frozen=True)
@@ -50,12 +49,6 @@ async def run_backtest(session: AsyncSession) -> BacktestResult:
     # Load DGCA reference.
     ref_stmt = select(DgcaReference).order_by(DgcaReference.month)
     ref_rows = list((await session.execute(ref_stmt)).scalars().all())
-
-    # Fetch route labels for the note.
-    route_labels: dict[int, str] = {
-        r.id: r.label
-        for r in (await session.execute(select(Route))).scalars().all()
-    }
 
     # Build {month: mean_apix} and {month: mean_dgca_fare}.
     # We group by calendar month and average across routes if multiple rows.

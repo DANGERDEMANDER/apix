@@ -59,7 +59,7 @@ async def healthz() -> dict[str, Any]:
     try:
         async with get_engine().connect() as conn:
             await conn.execute(text("SELECT 1"))
-    except Exception as exc:  # noqa: BLE001 - I/O boundary
+    except Exception as exc:
         log.error("healthz.db_failed", error=str(exc), exc_type=type(exc).__name__)
         db_status = "error"
 

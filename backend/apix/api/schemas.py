@@ -1,4 +1,4 @@
-﻿"""Pydantic response schemas for the public API.
+"""Pydantic response schemas for the public API.
 
 Every response includes a `meta` object with generated_at and mode so that
 consumers can tell when a number was produced and whether it came from
@@ -79,6 +79,7 @@ class ContributionsResponse(BaseModel):
     measure: Measure
     contributions: list[Contribution]
     total: float
+
 
 class BacktestMonthRow(BaseModel):
     month: str

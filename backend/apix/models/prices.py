@@ -29,6 +29,4 @@ class DailyRoutePrice(Base, CreatedAtMixin):
     n_windows_present: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     coverage_pct: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
 
-    route: Mapped["Route"] = relationship(
-        back_populates="daily_prices", lazy="raise"
-    )
+    route: Mapped[Route] = relationship(back_populates="daily_prices", lazy="raise")

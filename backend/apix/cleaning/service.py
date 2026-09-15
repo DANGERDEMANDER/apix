@@ -1,15 +1,15 @@
-﻿"""DB wrapper around clean_quotes: read fare_quotes, write clean_fares."""
+"""DB wrapper around clean_quotes: read fare_quotes, write clean_fares."""
 
 from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apix.cleaning.pipeline import FareRecord, RejectionReason, clean_quotes
+from apix.cleaning.pipeline import FareRecord, clean_quotes
 from apix.models.clean import CleanFare
 from apix.models.quotes import FareQuote
 
@@ -23,14 +23,12 @@ class CleanReport:
 
 
 def _bounds(from_date: date, to_date: date) -> tuple[datetime, datetime]:
-    start = datetime.combine(from_date, time(0, 0), tzinfo=timezone.utc)
-    end = datetime.combine(to_date + timedelta(days=1), time(0, 0), tzinfo=timezone.utc)
+    start = datetime.combine(from_date, time(0, 0), tzinfo=UTC)
+    end = datetime.combine(to_date + timedelta(days=1), time(0, 0), tzinfo=UTC)
     return start, end
 
 
-async def run_cleaning(
-    session: AsyncSession, from_date: date, to_date: date
-) -> CleanReport:
+async def run_cleaning(session: AsyncSession, from_date: date, to_date: date) -> CleanReport:
     start, end = _bounds(from_date, to_date)
     stmt = select(FareQuote).where(
         FareQuote.collected_at >= start,

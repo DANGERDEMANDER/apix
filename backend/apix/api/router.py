@@ -1,4 +1,4 @@
-﻿"""API routes (see build spec section 11).
+"""API routes (see build spec section 11).
 
 Phase 6 Batch 1 covers:
   GET /api/v1/index
@@ -12,7 +12,7 @@ Later batches will add /heatmap, /elasticity, /backtest, /quality/runs, and
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -20,7 +20,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apix.backtest.service import run_backtest
 from apix.api.schemas import (
     BacktestMetricsOut,
     BacktestMonthRow,
@@ -34,6 +33,7 @@ from apix.api.schemas import (
     RouteOut,
     RoutesResponse,
 )
+from apix.backtest.service import run_backtest
 from apix.db import session_dependency
 from apix.models.indices import Frequency, IndexStatus, IndexValue, Measure
 from apix.models.routes import Route
@@ -47,7 +47,7 @@ async def _meta(session: AsyncSession) -> Meta:
     stmt = select(CollectionRun).order_by(CollectionRun.started_at.desc()).limit(1)
     last_run = (await session.execute(stmt)).scalar_one_or_none()
     return Meta(
-        generated_at=datetime.now(timezone.utc),
+        generated_at=datetime.now(UTC),
         mode=last_run.mode.value if last_run is not None else "unknown",
         data_quality=None,
     )
@@ -189,9 +189,7 @@ async def contributions_for_date(
         Contribution(route_label=label, contribution_points=float(pts))
         for label, pts in (r.contributions or {}).items()
     ]
-    total = float(
-        sum((Decimal(str(c.contribution_points)) for c in contribs), start=Decimal("0"))
-    )
+    total = float(sum((Decimal(str(c.contribution_points)) for c in contribs), start=Decimal("0")))
 
     return ContributionsResponse(
         meta=await _meta(session),
@@ -200,6 +198,7 @@ async def contributions_for_date(
         contributions=contribs,
         total=total,
     )
+
 
 @router.get("/backtest", response_model=BacktestResponse)
 async def backtest(

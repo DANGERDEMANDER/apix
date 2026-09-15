@@ -1,5 +1,3 @@
-
-
 """The routes table â€” basket structure + DGCA-derived weights."""
 
 from __future__ import annotations
@@ -45,19 +43,15 @@ class Route(Base, CreatedAtMixin):
     # Provenance is a first-class column. The API and dashboard mark synthetic
     # weights visibly; we never present a placeholder as an official figure.
     weight_source: Mapped[WeightSource] = mapped_column(
-        Enum(WeightSource, name="weight_source_enum", native_enum=True, values_callable=_enum_values),
+        Enum(
+            WeightSource, name="weight_source_enum", native_enum=True, values_callable=_enum_values
+        ),
         nullable=False,
     )
     weight_source_note: Mapped[str] = mapped_column(String(256), nullable=False)
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    quotes: Mapped[list["FareQuote"]] = relationship(
-        back_populates="route", lazy="raise"
-    )
-    clean_fares: Mapped[list["CleanFare"]] = relationship(
-        back_populates="route", lazy="raise"
-    )
-    daily_prices: Mapped[list["DailyRoutePrice"]] = relationship(
-        back_populates="route", lazy="raise"
-    )
+    quotes: Mapped[list[FareQuote]] = relationship(back_populates="route", lazy="raise")
+    clean_fares: Mapped[list[CleanFare]] = relationship(back_populates="route", lazy="raise")
+    daily_prices: Mapped[list[DailyRoutePrice]] = relationship(back_populates="route", lazy="raise")

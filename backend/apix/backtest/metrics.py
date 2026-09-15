@@ -1,4 +1,4 @@
-﻿"""Backtest metrics: MAPE, Pearson r, Spearman rho, direction match."""
+"""Backtest metrics: MAPE, Pearson r, Spearman rho, direction match."""
 
 from __future__ import annotations
 
@@ -53,9 +53,7 @@ def _spearman(xs: list[float], ys: list[float]) -> float:
     return _pearson(_rank(xs), _rank(ys))
 
 
-def compute_metrics(
-    apix_monthly: list[float], dgca_monthly: list[float]
-) -> BacktestMetrics:
+def compute_metrics(apix_monthly: list[float], dgca_monthly: list[float]) -> BacktestMetrics:
     """Compute all four metrics on matched monthly series."""
     if len(apix_monthly) != len(dgca_monthly):
         raise ValueError("series lengths differ")

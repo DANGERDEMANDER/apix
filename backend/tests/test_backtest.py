@@ -1,4 +1,4 @@
-﻿"""Backtest metrics unit tests."""
+"""Backtest metrics unit tests."""
 
 from __future__ import annotations
 
@@ -50,4 +50,3 @@ def test_mismatched_lengths_raise() -> None:
 
     with pytest.raises(ValueError):
         compute_metrics([100.0, 101.0], [100.0])
-

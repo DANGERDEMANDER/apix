@@ -5,12 +5,12 @@ from __future__ import annotations
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from apix.models import Base  # noqa: F401 — imported for metadata
+from alembic import context
+from apix.models import Base
 from apix.settings import get_settings
 
 config = context.config

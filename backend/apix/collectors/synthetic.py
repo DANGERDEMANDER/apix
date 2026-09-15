@@ -19,7 +19,7 @@ import hashlib
 import math
 import random
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from apix.collectors.base import RawQuote
@@ -96,7 +96,7 @@ def _lead_time_multiplier(advance_days: int, lam: float) -> float:
 def _synthetic_collected_at(departure_date: date, advance_days: int) -> datetime:
     """Deterministic collection timestamp for a synthetic quote."""
     collection_date = departure_date - timedelta(days=advance_days)
-    return datetime.combine(collection_date, time(6, 0), tzinfo=timezone.utc)
+    return datetime.combine(collection_date, time(6, 0), tzinfo=UTC)
 
 
 def _to_decimal(x: float) -> Decimal:
@@ -118,9 +118,7 @@ class SyntheticCollector:
         self._cfg = config
         self._festivals = festivals
 
-    def _pick_carrier(
-        self, route_label: str, departure_date: date, advance_days: int
-    ) -> str:
+    def _pick_carrier(self, route_label: str, departure_date: date, advance_days: int) -> str:
         fixed = _CARRIER_BY_SOURCE.get(self.name)
         if fixed is not None:
             return fixed
@@ -186,9 +184,7 @@ class SyntheticCollector:
         noise = 1.0 + rng.uniform(-cfg.noise_pct, cfg.noise_pct)
         price *= noise
 
-        base_fare = _to_decimal(price).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        base_fare = _to_decimal(price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         taxes = (base_fare * Decimal(str(cfg.tax_rate))).quantize(Decimal("0.01"))
         udf = Decimal(cfg.udf_inr)
         convenience = Decimal("0.00")

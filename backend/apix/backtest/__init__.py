@@ -1,4 +1,4 @@
-﻿"""Backtest: compare monthly APIx against DGCA reference (spec section 12)."""
+"""Backtest: compare monthly APIx against DGCA reference (spec section 12)."""
 
 from __future__ import annotations
 

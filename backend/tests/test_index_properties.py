@@ -146,4 +146,3 @@ def test_weight_normalisation_sums_to_one(raw: dict[int, int]) -> None:
     w = normalise_weights(raw)
     total = sum(w.values(), start=Decimal("0"))
     assert abs(total - Decimal("1")) < Decimal("1e-9")
-    

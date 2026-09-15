@@ -53,22 +53,23 @@ class IndexValue(Base, CreatedAtMixin):
 
     date: Mapped[date] = mapped_column(Date, primary_key=True)
     frequency: Mapped[Frequency] = mapped_column(
-        Enum(Frequency, name="frequency_enum", native_enum=True, values_callable=_enum_values), primary_key=True
+        Enum(Frequency, name="frequency_enum", native_enum=True, values_callable=_enum_values),
+        primary_key=True,
     )
     measure: Mapped[Measure] = mapped_column(
-        Enum(Measure, name="measure_enum", native_enum=True, values_callable=_enum_values), primary_key=True
+        Enum(Measure, name="measure_enum", native_enum=True, values_callable=_enum_values),
+        primary_key=True,
     )
 
     value: Mapped[Decimal | None] = mapped_column(Numeric(10, 4), nullable=True)
     base_period: Mapped[str] = mapped_column(String(64), nullable=False)
     routes_included: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     weight_covered: Mapped[Decimal] = mapped_column(Numeric(8, 6), nullable=False)
-    contributions: Mapped[dict[str, float]] = mapped_column(
-        JSONB, nullable=False, default=dict
-    )
+    contributions: Mapped[dict[str, float]] = mapped_column(JSONB, nullable=False, default=dict)
 
     status: Mapped[IndexStatus] = mapped_column(
-        Enum(IndexStatus, name="index_status_enum", native_enum=True, values_callable=_enum_values), nullable=False
+        Enum(IndexStatus, name="index_status_enum", native_enum=True, values_callable=_enum_values),
+        nullable=False,
     )
     withheld_reason: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
@@ -84,14 +85,13 @@ class IndexBaseValue(Base, CreatedAtMixin):
         ForeignKey("routes.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     measure: Mapped[Measure] = mapped_column(
-        Enum(Measure, name="measure_enum", native_enum=True, values_callable=_enum_values), nullable=False
+        Enum(Measure, name="measure_enum", native_enum=True, values_callable=_enum_values),
+        nullable=False,
     )
     base_period: Mapped[str] = mapped_column(String(64), nullable=False)
 
     p_i0: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
     n_base_days: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    computed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    route: Mapped["Route"] = relationship(lazy="raise")
+    route: Mapped[Route] = relationship(lazy="raise")

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -34,7 +34,8 @@ class CreatedAtMixin:
 
 def utcnow() -> datetime:
     """Timezone-aware UTC now. Rule 8 forbids naive datetimes."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
+
 
 def _enum_values(enum_cls: type) -> list[str]:
     """Use .value instead of .name for SQLAlchemy Enum serialization."""

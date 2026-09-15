@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import statistics
+import itertools
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -58,7 +59,7 @@ def test_lead_time_curve_monotone_decreasing_on_average() -> None:
         means[adv] = statistics.mean(prices)
 
     ordered = [means[adv] for adv in sorted(windows)]
-    for a, b in zip(ordered, ordered[1:]):
+    for a, b in itertools.pairwise(ordered):
         assert a >= b, f"lead-time curve not decreasing: {means}"
 
 
@@ -127,5 +128,3 @@ def test_sold_out_quote_shape() -> None:
         assert q.decomposition_method == "none"
         break
     assert found, "no sold-out cell found in 200 attempts"
-
-

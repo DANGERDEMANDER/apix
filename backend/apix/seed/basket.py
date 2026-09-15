@@ -1,4 +1,4 @@
-﻿"""Load config/basket.yaml into the routes table."""
+"""Load config/basket.yaml into the routes table."""
 
 from __future__ import annotations
 
@@ -78,9 +78,7 @@ async def seed_routes(session: AsyncSession) -> int:
 
     weights = _normalise_weights(pax)
 
-    existing = {
-        r.label: r for r in (await session.execute(select(Route))).scalars().all()
-    }
+    existing = {r.label: r for r in (await session.execute(select(Route))).scalars().all()}
 
     written = 0
     for r in settings.basket.routes:

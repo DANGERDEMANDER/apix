@@ -53,8 +53,6 @@ class CleanFare(Base, CreatedAtMixin):
     is_imputed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     imputation_method: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
-    quote: Mapped["FareQuote"] = relationship(
-        back_populates="clean_fare", lazy="raise"
-    )
-    route: Mapped["Route"] = relationship(back_populates="clean_fares", lazy="raise")
-    source: Mapped["Source"] = relationship(back_populates="clean_fares", lazy="raise")
+    quote: Mapped[FareQuote] = relationship(back_populates="clean_fare", lazy="raise")
+    route: Mapped[Route] = relationship(back_populates="clean_fares", lazy="raise")
+    source: Mapped[Source] = relationship(back_populates="clean_fares", lazy="raise")

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 class DecompositionMethod(str, enum.Enum):
     PARSED = "parsed"
-    PARTIAL = "partial"       # source exposed some components; rest modelled
+    PARTIAL = "partial"  # source exposed some components; rest modelled
     MODELLED = "modelled"
     NONE = "none"
 
@@ -64,9 +64,7 @@ class FareQuote(Base, CreatedAtMixin):
         ForeignKey("sources.id", ondelete="RESTRICT"), nullable=False, index=True
     )
 
-    collected_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    collected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     departure_date: Mapped[date] = mapped_column(Date, nullable=False)
     advance_days: Mapped[int] = mapped_column(SmallInteger, nullable=False)
 
@@ -77,22 +75,25 @@ class FareQuote(Base, CreatedAtMixin):
     base_fare: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     taxes: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     udf: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
-    convenience_fee: Mapped[Decimal | None] = mapped_column(
-        Numeric(10, 2), nullable=True
-    )
+    convenience_fee: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     total_fare: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(CHAR(3), nullable=False, default="INR")
 
     is_sold_out: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     decomposition_method: Mapped[DecompositionMethod] = mapped_column(
-        Enum(DecompositionMethod, name="decomposition_method_enum", native_enum=True, values_callable=_enum_values),
+        Enum(
+            DecompositionMethod,
+            name="decomposition_method_enum",
+            native_enum=True,
+            values_callable=_enum_values,
+        ),
         nullable=False,
     )
     raw_payload: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
 
-    route: Mapped["Route"] = relationship(back_populates="quotes", lazy="raise")
-    source: Mapped["Source"] = relationship(back_populates="quotes", lazy="raise")
-    run: Mapped["CollectionRun"] = relationship(back_populates="quotes", lazy="raise")
-    clean_fare: Mapped["CleanFare | None"] = relationship(
+    route: Mapped[Route] = relationship(back_populates="quotes", lazy="raise")
+    source: Mapped[Source] = relationship(back_populates="quotes", lazy="raise")
+    run: Mapped[CollectionRun] = relationship(back_populates="quotes", lazy="raise")
+    clean_fare: Mapped[CleanFare | None] = relationship(
         back_populates="quote", uselist=False, lazy="raise"
     )

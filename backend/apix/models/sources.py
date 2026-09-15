@@ -43,9 +43,5 @@ class Source(Base, CreatedAtMixin):
     robots_allows_target: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    quotes: Mapped[list["FareQuote"]] = relationship(
-        back_populates="source", lazy="raise"
-    )
-    clean_fares: Mapped[list["CleanFare"]] = relationship(
-        back_populates="source", lazy="raise"
-    )
+    quotes: Mapped[list[FareQuote]] = relationship(back_populates="source", lazy="raise")
+    clean_fares: Mapped[list[CleanFare]] = relationship(back_populates="source", lazy="raise")

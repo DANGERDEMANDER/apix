@@ -35,30 +35,22 @@ class CollectionRun(Base, CreatedAtMixin):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
     mode: Mapped[RunMode] = mapped_column(
-        Enum(RunMode, name="run_mode_enum", native_enum=True, values_callable=_enum_values), nullable=False
+        Enum(RunMode, name="run_mode_enum", native_enum=True, values_callable=_enum_values),
+        nullable=False,
     )
-    started_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    finished_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[RunStatus] = mapped_column(
-        Enum(RunStatus, name="run_status_enum", native_enum=True, values_callable=_enum_values), nullable=False
+        Enum(RunStatus, name="run_status_enum", native_enum=True, values_callable=_enum_values),
+        nullable=False,
     )
 
     quotes_collected: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     quotes_expected: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    blocked_sources: Mapped[list[str]] = mapped_column(
-        JSONB, nullable=False, default=list
-    )
-    error_summary: Mapped[dict[str, str]] = mapped_column(
-        JSONB, nullable=False, default=dict
-    )
+    blocked_sources: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    error_summary: Mapped[dict[str, str]] = mapped_column(JSONB, nullable=False, default=dict)
 
     seed: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     notes: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
-    quotes: Mapped[list["FareQuote"]] = relationship(
-        back_populates="run", lazy="raise"
-    )
+    quotes: Mapped[list[FareQuote]] = relationship(back_populates="run", lazy="raise")

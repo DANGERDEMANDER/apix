@@ -1,4 +1,4 @@
-﻿"""Section 8 - the cleaning pipeline.
+"""Section 8 - the cleaning pipeline.
 
 Five steps, applied in order:
   1. Structural validation
@@ -94,9 +94,7 @@ def _decompose(rec: FareRecord) -> FareRecord:
         conv = rec.convenience_fee or Decimal("0")
         return replace(rec, base_fare=rec.total_fare - taxes - udf - conv)
 
-    gst = (rec.total_fare * Decimal(str(s.index.gst_rate_economy))).quantize(
-        Decimal("0.01")
-    )
+    gst = (rec.total_fare * Decimal(str(s.index.gst_rate_economy))).quantize(Decimal("0.01"))
     udf = Decimal(s.index.udf_inr_per_airport.get("DEL", 249))
     base = (rec.total_fare - gst - udf).quantize(Decimal("0.01"))
     if base < Decimal("0"):

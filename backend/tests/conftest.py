@@ -37,7 +37,7 @@ def repo_root() -> Path:
 
 
 @pytest_asyncio.fixture
-async def db_session() -> AsyncIterator["AsyncSession"]:
+async def db_session() -> AsyncIterator[AsyncSession]:
     """Create all tables in apix_test, yield a session, drop all tables."""
     from apix.db import get_engine, get_sessionmaker
     from apix.models import Base

@@ -15,7 +15,7 @@ build_daily_prices must run before build_indices.
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Literal
 
@@ -42,21 +42,17 @@ MeasureStr = Literal["base", "total"]
 
 def _bounds(from_date: date, to_date: date) -> tuple[datetime, datetime]:
     """[start, end) UTC bounds for a collection-date range."""
-    start = datetime.combine(from_date, time(0, 0), tzinfo=timezone.utc)
-    end = datetime.combine(to_date + timedelta(days=1), time(0, 0), tzinfo=timezone.utc)
+    start = datetime.combine(from_date, time(0, 0), tzinfo=UTC)
+    end = datetime.combine(to_date + timedelta(days=1), time(0, 0), tzinfo=UTC)
     return start, end
 
 
 async def _load_active_routes(session: AsyncSession) -> dict[int, Route]:
-    rows = (
-        await session.execute(select(Route).where(Route.is_active.is_(True)))
-    ).scalars().all()
+    rows = (await session.execute(select(Route).where(Route.is_active.is_(True)))).scalars().all()
     return {r.id: r for r in rows}
 
 
-async def _load_quotes(
-    session: AsyncSession, from_date: date, to_date: date
-) -> list[FareQuote]:
+async def _load_quotes(session: AsyncSession, from_date: date, to_date: date) -> list[FareQuote]:
     start, end = _bounds(from_date, to_date)
     stmt = select(FareQuote).where(
         FareQuote.collected_at >= start,
@@ -85,17 +81,13 @@ async def _load_daily_prices(
 # ---------------------------------------------------------------------------
 
 
-async def build_daily_prices(
-    session: AsyncSession, from_date: date, to_date: date
-) -> int:
+async def build_daily_prices(session: AsyncSession, from_date: date, to_date: date) -> int:
     """Aggregate fare_quotes into daily_route_price for the range.
 
     Idempotent: existing rows in [from_date, to_date] are replaced.
     """
     settings = get_settings()
-    window_weights = {
-        k: Decimal(str(v)) for k, v in settings.index.window_weights.items()
-    }
+    window_weights = {k: Decimal(str(v)) for k, v in settings.index.window_weights.items()}
     total_windows = len(settings.index.advance_windows_days)
 
     routes = await _load_active_routes(session)
@@ -129,17 +121,11 @@ async def build_daily_prices(
     keys = set(base_bucket.keys()) | set(total_bucket.keys())
     written = 0
     for coll_date, route_id in keys:
-        base_agg = aggregate_windows(
-            base_bucket.get((coll_date, route_id), {}), window_weights
-        )
-        total_agg = aggregate_windows(
-            total_bucket.get((coll_date, route_id), {}), window_weights
-        )
+        base_agg = aggregate_windows(base_bucket.get((coll_date, route_id), {}), window_weights)
+        total_agg = aggregate_windows(total_bucket.get((coll_date, route_id), {}), window_weights)
         if base_agg is None or total_agg is None:
             continue
-        windows_present = max(
-            len(base_agg.windows_present), len(total_agg.windows_present)
-        )
+        windows_present = max(len(base_agg.windows_present), len(total_agg.windows_present))
         coverage_pct = (
             Decimal(windows_present) / Decimal(total_windows) * Decimal("100")
         ).quantize(Decimal("0.01"))
@@ -205,7 +191,7 @@ async def _write_base_values(
                 base_period=base_period_label,
                 p_i0=p_i0.quantize(Decimal("0.0001")),
                 n_base_days=len(vals),
-                computed_at=datetime.now(timezone.utc),
+                computed_at=datetime.now(UTC),
             )
         )
     await session.flush()
@@ -249,9 +235,7 @@ async def _compute_daily(
 ) -> dict[Measure, dict[date, IndexResult]]:
     settings = get_settings()
     routes = await _load_active_routes(session)
-    route_weights = normalise_weights(
-        {r.id: r.dgca_pax_annual for r in routes.values()}
-    )
+    route_weights = normalise_weights({r.id: r.dgca_pax_annual for r in routes.values()})
     route_labels = {r.id: r.label for r in routes.values()}
 
     prices = await _load_daily_prices(session, from_date, to_date)
@@ -278,9 +262,7 @@ async def _compute_daily(
             if not base_values_by_measure.get(m):
                 continue
             idx = 0 if m == Measure.BASE else 1
-            route_prices = {
-                rid: pair[idx] for rid, pair in prices_by_date[d].items()
-            }
+            route_prices = {rid: pair[idx] for rid, pair in prices_by_date[d].items()}
             result = compute_index(
                 on_date=d,
                 route_prices=route_prices,
@@ -322,13 +304,18 @@ async def _write_weekly(
 
     written = 0
     for _, results in weeks.items():
-        published = [r for r in results if r.status == IndexStatus.PUBLISHED and r.value is not None]
+        published = [
+            r for r in results if r.status == IndexStatus.PUBLISHED and r.value is not None
+        ]
         if len(published) < min_days:
             continue
-        mean_value = (sum((r.value for r in published if r.value is not None), start=Decimal("0"))
-                      / Decimal(len(published))).quantize(Decimal("0.0001"))
-        mean_cov = (sum((r.weight_covered for r in published), start=Decimal("0"))
-                    / Decimal(len(published))).quantize(Decimal("0.000001"))
+        mean_value = (
+            sum((r.value for r in published if r.value is not None), start=Decimal("0"))
+            / Decimal(len(published))
+        ).quantize(Decimal("0.0001"))
+        mean_cov = (
+            sum((r.weight_covered for r in published), start=Decimal("0")) / Decimal(len(published))
+        ).quantize(Decimal("0.000001"))
         # Assign the value to the last day of the week for lack of a separate
         # week-key column; the DEMO_SCRIPT will explain this representation.
         ref_date = max(r.date for r in published)
@@ -363,13 +350,18 @@ async def _write_monthly(
 
     written = 0
     for _, results in months.items():
-        published = [r for r in results if r.status == IndexStatus.PUBLISHED and r.value is not None]
+        published = [
+            r for r in results if r.status == IndexStatus.PUBLISHED and r.value is not None
+        ]
         if len(published) < min_days:
             continue
-        mean_value = (sum((r.value for r in published if r.value is not None), start=Decimal("0"))
-                      / Decimal(len(published))).quantize(Decimal("0.0001"))
-        mean_cov = (sum((r.weight_covered for r in published), start=Decimal("0"))
-                    / Decimal(len(published))).quantize(Decimal("0.000001"))
+        mean_value = (
+            sum((r.value for r in published if r.value is not None), start=Decimal("0"))
+            / Decimal(len(published))
+        ).quantize(Decimal("0.0001"))
+        mean_cov = (
+            sum((r.weight_covered for r in published), start=Decimal("0")) / Decimal(len(published))
+        ).quantize(Decimal("0.000001"))
         ref_date = max(r.date for r in published)
         session.add(
             IndexValue(

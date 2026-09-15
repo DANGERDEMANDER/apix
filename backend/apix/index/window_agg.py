@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import statistics
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
@@ -86,9 +85,7 @@ def aggregate_windows(
     if present_weight_sum <= 0:
         return None
 
-    effective_weights = {
-        adv: window_weights[adv] / present_weight_sum for adv in present
-    }
+    effective_weights = {adv: window_weights[adv] / present_weight_sum for adv in present}
 
     price = sum(
         (effective_weights[adv] * present[adv] for adv in present),

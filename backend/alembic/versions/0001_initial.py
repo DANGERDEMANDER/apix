@@ -11,8 +11,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision: str = "0001_initial"
 down_revision: str | None = None
@@ -21,14 +22,10 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    weight_source_enum = sa.Enum(
-        "dgca-published", "dgca-synthetic", name="weight_source_enum"
-    )
+    weight_source_enum = sa.Enum("dgca-published", "dgca-synthetic", name="weight_source_enum")
     source_kind_enum = sa.Enum("airline", "ota", name="source_kind_enum")
     run_mode_enum = sa.Enum("live", "replay", "synthetic", name="run_mode_enum")
-    run_status_enum = sa.Enum(
-        "running", "success", "partial", "failed", name="run_status_enum"
-    )
+    run_status_enum = sa.Enum("running", "success", "partial", "failed", name="run_status_enum")
     decomposition_method_enum = sa.Enum(
         "parsed", "partial", "modelled", "none", name="decomposition_method_enum"
     )
@@ -49,18 +46,14 @@ def upgrade() -> None:
         sa.Column("weight_period", sa.String(16), nullable=False),
         sa.Column("weight_source", weight_source_enum, nullable=False),
         sa.Column("weight_source_note", sa.String(256), nullable=False),
-        sa.Column(
-            "is_active", sa.Boolean(), nullable=False, server_default=sa.true()
-        ),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
             nullable=False,
             server_default=sa.func.now(),
         ),
-        sa.UniqueConstraint(
-            "origin_iata", "destination_iata", name="uq_routes_origin_dest"
-        ),
+        sa.UniqueConstraint("origin_iata", "destination_iata", name="uq_routes_origin_dest"),
     )
 
     op.create_table(
@@ -73,9 +66,7 @@ def upgrade() -> None:
         sa.Column("crawl_delay_s", sa.Numeric(4, 1), nullable=False),
         sa.Column("robots_last_checked", sa.DateTime(timezone=True), nullable=True),
         sa.Column("robots_allows_target", sa.Boolean(), nullable=True),
-        sa.Column(
-            "is_enabled", sa.Boolean(), nullable=False, server_default=sa.false()
-        ),
+        sa.Column("is_enabled", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -91,12 +82,8 @@ def upgrade() -> None:
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("finished_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("status", run_status_enum, nullable=False),
-        sa.Column(
-            "quotes_collected", sa.Integer(), nullable=False, server_default="0"
-        ),
-        sa.Column(
-            "quotes_expected", sa.Integer(), nullable=False, server_default="0"
-        ),
+        sa.Column("quotes_collected", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column("quotes_expected", sa.Integer(), nullable=False, server_default="0"),
         sa.Column(
             "blocked_sources",
             postgresql.JSONB(),
@@ -155,9 +142,7 @@ def upgrade() -> None:
         sa.Column("convenience_fee", sa.Numeric(10, 2), nullable=True),
         sa.Column("total_fare", sa.Numeric(10, 2), nullable=False),
         sa.Column("currency", sa.CHAR(3), nullable=False, server_default="INR"),
-        sa.Column(
-            "is_sold_out", sa.Boolean(), nullable=False, server_default=sa.false()
-        ),
+        sa.Column("is_sold_out", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("decomposition_method", decomposition_method_enum, nullable=False),
         sa.Column("raw_payload", postgresql.JSONB(), nullable=False),
         sa.Column(
@@ -201,13 +186,9 @@ def upgrade() -> None:
         sa.Column("advance_days", sa.SmallInteger(), nullable=False),
         sa.Column("base_fare", sa.Numeric(10, 2), nullable=False),
         sa.Column("total_fare", sa.Numeric(10, 2), nullable=False),
-        sa.Column(
-            "is_outlier", sa.Boolean(), nullable=False, server_default=sa.false()
-        ),
+        sa.Column("is_outlier", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("outlier_reason", sa.String(128), nullable=True),
-        sa.Column(
-            "is_imputed", sa.Boolean(), nullable=False, server_default=sa.false()
-        ),
+        sa.Column("is_imputed", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("imputation_method", sa.String(32), nullable=True),
         sa.Column(
             "created_at",
