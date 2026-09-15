@@ -19,6 +19,7 @@ jobs:
           --health-interval 2s --health-timeout 2s --health-retries 20
     env:
       APIX_DB_URL: postgresql+asyncpg://apix:apix@localhost:5432/apix
+      APIX_TEST_DB_URL: postgresql+asyncpg://apix:apix@localhost:5432/apix_test
       APIX_ENV: ci
       APIX_CONFIG_DIR: ${{ github.workspace }}/config
     steps:
@@ -27,6 +28,9 @@ jobs:
         with: { version: "0.12.15" }
       - run: uv python install 3.11
       - run: uv sync --all-groups
+      - name: Create apix_test database
+        run: |
+          PGPASSWORD=apix psql -h localhost -U apix -d apix -c 'CREATE DATABASE apix_test OWNER apix'
       - run: uv run ruff check backend
       - run: uv run ruff format --check backend
       - run: uv run mypy backend/apix backend/tests
