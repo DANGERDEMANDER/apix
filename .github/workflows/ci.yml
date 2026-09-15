@@ -1,0 +1,33 @@
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: apix
+          POSTGRES_PASSWORD: apix
+          POSTGRES_DB: apix
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U apix -d apix"
+          --health-interval 2s --health-timeout 2s --health-retries 20
+    env:
+      APIX_DB_URL: postgresql+asyncpg://apix:apix@localhost:5432/apix
+      APIX_ENV: ci
+      APIX_CONFIG_DIR: ${{ github.workspace }}/config
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with: { version: "0.4.27" }
+      - run: uv python install 3.11
+      - run: uv sync --all-groups
+      - run: uv run ruff check backend
+      - run: uv run ruff format --check backend
+      - run: uv run mypy backend/apix backend/tests
+      - run: uv run pytest --cov --cov-report=term-missing

@@ -1,0 +1,23 @@
+# Festival calendar for the synthetic fare generator (Phase 2).
+#
+# Each entry contributes a price multiplier on the festival date, with a
+# linear falloff over the days before and after. Missing or empty file means
+# the built-in defaults in apix/collectors/festivals.py are used instead.
+
+festivals:
+  - { name: "Republic Day",     date: "2024-01-26", surge_days_before: 2, surge_days_after: 1, multiplier: 1.15 }
+  - { name: "Holi",             date: "2024-03-25", surge_days_before: 3, surge_days_after: 2, multiplier: 1.25 }
+  - { name: "Eid al-Fitr",      date: "2024-04-10", surge_days_before: 3, surge_days_after: 1, multiplier: 1.20 }
+  - { name: "Independence Day", date: "2024-08-15", surge_days_before: 2, surge_days_after: 1, multiplier: 1.15 }
+  - { name: "Onam",             date: "2024-09-15", surge_days_before: 3, surge_days_after: 2, multiplier: 1.20 }
+  - { name: "Durga Puja",       date: "2024-10-10", surge_days_before: 4, surge_days_after: 2, multiplier: 1.30 }
+  - { name: "Diwali",           date: "2024-11-01", surge_days_before: 5, surge_days_after: 3, multiplier: 1.45 }
+  - { name: "Christmas",        date: "2024-12-25", surge_days_before: 3, surge_days_after: 2, multiplier: 1.25 }
+  - { name: "New Year",         date: "2025-01-01", surge_days_before: 3, surge_days_after: 2, multiplier: 1.20 }
+  - { name: "Pongal",           date: "2025-01-14", surge_days_before: 3, surge_days_after: 1, multiplier: 1.15 }
+  - { name: "Republic Day",     date: "2025-01-26", surge_days_before: 2, surge_days_after: 1, multiplier: 1.15 }
+  - { name: "Holi",             date: "2025-03-14", surge_days_before: 3, surge_days_after: 2, multiplier: 1.25 }
+  - { name: "Eid al-Fitr",      date: "2025-03-31", surge_days_before: 3, surge_days_after: 1, multiplier: 1.20 }
+  - { name: "Independence Day", date: "2025-08-15", surge_days_before: 2, surge_days_after: 1, multiplier: 1.15 }
+  - { name: "Diwali",           date: "2025-10-20", surge_days_before: 5, surge_days_after: 3, multiplier: 1.45 }
+  - { name: "Christmas",        date: "2025-12-25", surge_days_before: 3, surge_days_after: 2, multiplier: 1.25 }

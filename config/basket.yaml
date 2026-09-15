@@ -1,0 +1,26 @@
+# Basket of 10 domestic routes for APix — structure only.
+#
+# Route selection: the six routes named explicitly in SIH 2026 PS 26056
+# (DEL-BOM, DEL-BLR, BOM-BLR, DEL-CCU, BLR-HYD, MAA-DEL) plus four additional
+# high-traffic corridors to broaden sector coverage (DEL-HYD, BOM-HYD,
+# DEL-AMD, BLR-CCU).
+#
+# Route weights are NOT stored here. They are computed in Phase 1 from DGCA
+# annual passenger figures and stored on routes.weight with an explicit
+# weight_source enum ('dgca-published' or 'dgca-synthetic'). Storing weights
+# in this file would invite a reader to mistake a placeholder for an official
+# DGCA figure, which spec §12 forbids.
+
+weight_period: "FY2024-25"
+
+routes:
+  - { origin: DEL, destination: BOM, label: "DEL-BOM" }
+  - { origin: DEL, destination: BLR, label: "DEL-BLR" }
+  - { origin: BOM, destination: BLR, label: "BOM-BLR" }
+  - { origin: DEL, destination: CCU, label: "DEL-CCU" }
+  - { origin: BLR, destination: HYD, label: "BLR-HYD" }
+  - { origin: MAA, destination: DEL, label: "MAA-DEL" }
+  - { origin: DEL, destination: HYD, label: "DEL-HYD" }
+  - { origin: BOM, destination: HYD, label: "BOM-HYD" }
+  - { origin: DEL, destination: AMD, label: "DEL-AMD" }
+  - { origin: BLR, destination: CCU, label: "BLR-CCU" }

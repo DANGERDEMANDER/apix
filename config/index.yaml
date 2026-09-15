@@ -1,0 +1,74 @@
+# Index construction config. Every value here is overridable by an operator.
+# Validated by Pydantic on startup; a bad field name appears in the error.
+
+# Advance-purchase windows, in days before departure.
+# NOTE ON MoSPI ALIGNMENT: MoSPI's Expert Group for the new CPI series
+# recommended a single 7-day advance-purchase window (some experts cited 21
+# days for domestic travel). APix uses five windows because a single window
+# captures only one point of the booking curve; the weighted aggregation below
+# approximates the observed distribution of booking lead times. Documented in
+# METHODOLOGY.md.
+advance_windows_days: [1, 7, 15, 30, 45]
+
+# Booking-profile weights v_w. Must sum to 1.0 (tolerance 1e-9).
+window_weights:
+  1: 0.05
+  7: 0.15
+  15: 0.25
+  30: 0.30
+  45: 0.25
+
+# Whether window_weights above are a fixed prior or a calibrated posterior.
+# "prior"      → use as-is (default; Phase 0–4)
+# "calibrated" → overwritten by `apix calibrate` in Phase 5
+window_weights_source: "prior"
+
+# Preserved prior, never overwritten. `apix calibrate` (Phase 5) fits the
+# effective weights toward DGCA monthly reference with an L2 penalty pulling
+# back to this prior, since we have only ~2 monthly reference points.
+window_weights_prior:
+  1: 0.05
+  7: 0.15
+  15: 0.25
+  30: 0.30
+  45: 0.25
+
+# Populated by `apix calibrate` (Phase 5). Null in prior mode.
+# Example: {"fitted_at": "2026-01-15T09:00:00Z", "n_months": 2, "rmse": 0.83}
+calibration_metadata: null
+
+# Base period. Default is the first N complete collection days, where
+# "complete" means weight_covered >= min_publishable_coverage on that day.
+# NOTE ON MoSPI ALIGNMENT: MoSPI CPI 2024 uses calendar year 2024 as base.
+# APix uses a rolling first-N-days base because the system is designed for
+# real-time operation from first boot; base_period is stored in the DB and can
+# be rolled forward to a fixed calendar period once a full year exists.
+base_period_days: 14
+base_period_min_route_days: 10
+
+# Missing-route handling. weight_covered < min_publishable_coverage => withhold.
+min_publishable_coverage: 0.70
+
+# Route suspension detection: after this many consecutive days with zero
+# accepted quotes, log route_suspension_suspected and exclude the route from
+# routes_included until it reappears.
+route_suspension_days: 7
+
+# Outlier detection guardrails (absolute, applied in addition to MAD).
+min_fare_inr: 800
+max_fare_inr: 90000
+
+# Imputation cap. Fail the run if imputed share exceeds this on any published day.
+max_imputation_share: 0.10
+
+# GST and UDF model for 'modelled' decomposition method.
+gst_rate_economy: 0.05
+udf_inr_per_airport:
+  DEL: 249
+  BOM: 249
+  BLR: 249
+  HYD: 249
+  CCU: 249
+  AMD: 249
+  GOI: 249
+  MAA: 249

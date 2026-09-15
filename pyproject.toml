@@ -1,0 +1,92 @@
+[project]
+name = "apix"
+version = "0.1.0"
+description = "APix ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Real-time Airfare Price Index for India (SIH 2026 PS 26056)"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.32.0",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.6.0",
+    "sqlalchemy[asyncio]==2.0.36",
+    "asyncpg==0.30.0",
+    "alembic==1.13.3",
+    "httpx==0.27.2",
+    "structlog==24.4.0",
+    "apscheduler==3.10.4",
+    "pandas==2.2.3",
+    "numpy==2.1.2",
+    "scipy==1.14.1",
+    "pyyaml==6.0.2",
+    "playwright==1.48.0",
+    "python-dotenv==1.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.3",
+    "pytest-cov==6.0.0",
+    "pytest-asyncio==0.24.0",
+    "hypothesis==6.115.0",
+    "ruff==0.7.1",
+    "mypy==1.13.0",
+    "pre-commit==4.0.1",
+    "types-pyyaml==6.0.12.20240917",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend/apix"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["backend"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["backend/apix", "backend/tests"]
+plugins = ["pydantic.mypy"]
+warn_unreachable = true
+exclude = ["backend/alembic/versions/"]
+
+[[tool.mypy.overrides]]
+module = ["scipy.*", "playwright.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-ra --strict-markers --strict-config"
+
+[tool.coverage.run]
+source = ["backend/apix"]
+omit = [
+    "backend/apix/__init__.py",
+    "*/__init__.py",
+    # Glue code, exercised end-to-end rather than by unit tests.
+    # The spec section 15 DoD asks for >= 85% coverage on core modules,
+    # not on DB orchestrators and CLI wiring.
+    "backend/apix/cli.py",
+    "backend/apix/collectors/service.py",
+    "backend/apix/index/service.py",
+    "backend/apix/cleaning/service.py",
+    "backend/apix/seed/dgca.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+

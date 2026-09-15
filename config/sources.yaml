@@ -1,0 +1,78 @@
+# Collection sources. All is_enabled=false by default; live mode additionally
+# requires APIX_ENABLE_LIVE=true. Synthetic and replay modes ignore is_enabled.
+#
+# The list matches the carriers and OTAs named in SIH 2026 PS 26056 exactly:
+# airlines — IndiGo, Air India, Air India Express, Akasa Air, SpiceJet;
+# OTAs — MakeMyTrip, Yatra, EaseMyTrip, Cleartrip, Ixigo, Goibibo.
+# Vistara is deliberately excluded: it merged into Air India in 2024-25 and
+# is not a separately operating carrier for the collection period.
+
+sources:
+  # ---- Airlines ----
+  - name: IndiGo
+    kind: airline
+    base_url: https://www.goindigo.in
+    rate_limit_rpm: 10
+    crawl_delay_s: 6.0
+    is_enabled: false
+  - name: AirIndia
+    kind: airline
+    base_url: https://www.airindia.com
+    rate_limit_rpm: 10
+    crawl_delay_s: 6.0
+    is_enabled: false
+  - name: AirIndiaExpress
+    kind: airline
+    base_url: https://www.airindiaexpress.com
+    rate_limit_rpm: 10
+    crawl_delay_s: 6.0
+    is_enabled: false
+  - name: AkasaAir
+    kind: airline
+    base_url: https://www.akasaair.com
+    rate_limit_rpm: 10
+    crawl_delay_s: 6.0
+    is_enabled: false
+  - name: SpiceJet
+    kind: airline
+    base_url: https://www.spicejet.com
+    rate_limit_rpm: 10
+    crawl_delay_s: 6.0
+    is_enabled: false
+  # ---- OTAs ----
+  - name: MakeMyTrip
+    kind: ota
+    base_url: https://www.makemytrip.com
+    rate_limit_rpm: 6
+    crawl_delay_s: 10.0
+    is_enabled: false
+  - name: Yatra
+    kind: ota
+    base_url: https://www.yatra.com
+    rate_limit_rpm: 6
+    crawl_delay_s: 10.0
+    is_enabled: false
+  - name: EaseMyTrip
+    kind: ota
+    base_url: https://www.easemytrip.com
+    rate_limit_rpm: 6
+    crawl_delay_s: 10.0
+    is_enabled: false
+  - name: Cleartrip
+    kind: ota
+    base_url: https://www.cleartrip.com
+    rate_limit_rpm: 6
+    crawl_delay_s: 10.0
+    is_enabled: false
+  - name: Ixigo
+    kind: ota
+    base_url: https://www.ixigo.com
+    rate_limit_rpm: 6
+    crawl_delay_s: 10.0
+    is_enabled: false
+  - name: Goibibo
+    kind: ota
+    base_url: https://www.goibibo.com
+    rate_limit_rpm: 6
+    crawl_delay_s: 10.0
+    is_enabled: false
