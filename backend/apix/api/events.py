@@ -50,10 +50,8 @@ class RunChannel:
             message=message,
             detail=dict(detail),
         )
-        try:
-            self.queue.put_nowait(ev)
-        except asyncio.QueueFull:
-            pass  # drop rather than block the collector
+        with contextlib.suppress(asyncio.QueueFull):
+            self.queue.put_nowait(ev)  # drop rather than block the collector
 
     async def close(self) -> None:
         self.finished = True
