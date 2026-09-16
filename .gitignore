@@ -1,24 +1,38 @@
+# Python
 .venv/
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.hypothesis/
 .coverage
 coverage.xml
 htmlcov/
-dist/
-build/
-*.egg-info/
-.eggs/
+.env
+.env.local
+
+# Node / Vite
 node_modules/
 frontend/dist/
 frontend/.vite/
-.vscode/
+
+# IDE / OS
+.vscode/*
+!.vscode/settings.json
 .idea/
 .DS_Store
 Thumbs.db
 *.log
+
+# Local scratch
+notes.md
+scratch/
+tmp/
+apix-full.zip
+apix-snapshot.txt
+git-info.txt
