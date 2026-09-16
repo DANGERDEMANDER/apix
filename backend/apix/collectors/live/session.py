@@ -83,16 +83,12 @@ class PlaywrightSession:
         """Navigate to url and return the rendered HTML."""
         ctx = self._context
         if ctx is None:
-            raise RuntimeError(
-                "session not started; use `async with PlaywrightSession(...)`"
-            )
+            raise RuntimeError("session not started; use `async with PlaywrightSession(...)`")
         page: Page = await ctx.new_page()
         try:
             await page.goto(url, wait_until="domcontentloaded")
             if wait_for_selector is not None:
-                await page.wait_for_selector(
-                    wait_for_selector, timeout=self._timeout_ms
-                )
+                await page.wait_for_selector(wait_for_selector, timeout=self._timeout_ms)
             return await page.content()
         finally:
             await page.close()
