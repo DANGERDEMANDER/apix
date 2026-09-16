@@ -1,29 +1,58 @@
-/* Design tokens per build spec section 10. No purple gradients. No glassmorphism. */
-:root {
-  --ink:        #141825;
-  --ground:     #EEF1F6;
-  --surface:    #FFFFFF;
-  --muted:      #6B7A8F;
-  --line:       #D3DAE4;
-  --accent:     #1D4E8F;
-  --up:         #A62B22;
-  --down:       #0C6B62;
-  --warn:       #C25E10;
-  --glow:       none;
-  --grid:       none;
+﻿/* ─────────────────────────────────────────────
+   APix design tokens — aurora edition
+   ───────────────────────────────────────────── */
 
-  --radius:     6px;
-  --radius-sm:  4px;
+:root,
+:root[data-theme="calm"] {
+  --bg-0: #06080F;
+  --bg-1: #0A0E1A;
+  --bg-2: #111726;
 
-  --font-sans:  "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono:  "IBM Plex Mono", "SF Mono", Consolas, monospace;
+  --ink: #F4F7FC;
+  --ink-dim: #B4BECF;
+  --muted: #7A879B;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.14);
+
+  --surface: rgba(255, 255, 255, 0.028);
+  --surface-hi: rgba(255, 255, 255, 0.055);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --blur: 18px;
+
+  --accent: #8B6BFF;
+  --accent-2: #29D9EE;
+  --accent-3: #FF7AC8;
+  --lime: #C4FF4A;
+
+  --up: #FF5C7A;
+  --down: #2BE6A5;
+  --warn: #FFB347;
+  --ok: #2BE6A5;
+
+  --grad-hero: linear-gradient(135deg, #8B6BFF 0%, #29D9EE 48%, #FF7AC8 100%);
+  --grad-hero-soft: linear-gradient(135deg, rgba(139,107,255,0.28), rgba(41,217,238,0.22), rgba(255,122,200,0.22));
+  --grad-line: linear-gradient(90deg, #8B6BFF, #29D9EE 60%, #FF7AC8);
+  --grad-card: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.05) inset,
+                 0 20px 40px -24px rgba(0,0,0,0.8);
+  --shadow-lift: 0 1px 0 rgba(255,255,255,0.08) inset,
+                 0 32px 64px -28px rgba(0,0,0,0.9),
+                 0 0 0 1px rgba(139,107,255,0.14);
+  --glow-accent: 0 0 32px rgba(139,107,255,0.35);
+  --glow-down: 0 0 24px rgba(43,230,165,0.35);
+  --glow-up: 0 0 24px rgba(255,92,122,0.35);
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Consolas, monospace;
 
   --fs-xs: 11px;
-  --fs-sm: 12px;
-  --fs-md: 13px;
-  --fs-lg: 15px;
-  --fs-xl: 19px;
-  --fs-2xl: 24px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 22px;
+  --fs-2xl: 32px;
+  --fs-hero: 76px;
 
   --sp-1: 4px;
   --sp-2: 8px;
@@ -31,33 +60,48 @@
   --sp-4: 16px;
   --sp-5: 24px;
   --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  --radius-sm: 10px;
+  --radius: 18px;
+  --radius-lg: 28px;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 320ms;
+  --dur-slow: 600ms;
 }
 
 :root[data-theme="dark"] {
-  --ink:        #E8ECF2;
-  --ground:     #0F1319;
-  --surface:    #161B23;
-  --muted:      #8A96A8;
-  --line:       #2A323E;
-  --accent:     #4E8AD4;
-  --up:         #E27068;
-  --down:       #3DB8A8;
-  --warn:       #E59A4A;
-  --glow:       none;
-  --grid:       none;
+  --bg-0: #050609;
+  --bg-1: #0A0C12;
+  --bg-2: #11141C;
+  --ink: #E9ECF2;
+  --ink-dim: #9AA3B2;
+  --muted: #6B7480;
+  --accent: #7A85A8;
+  --accent-2: #5A9FBF;
+  --accent-3: #9A8DBF;
+  --grad-hero: linear-gradient(135deg, #7A85A8, #5A9FBF 50%, #9A8DBF);
 }
 
 :root[data-theme="cyber"] {
-  --ink:        #E6F7FF;
-  --ground:     #05080D;
-  --surface:    #0B1119;
-  --muted:      #5B7A99;
-  --line:       #14232E;
-  --accent:     #00E5D0;
-  --up:         #FF3D71;
-  --down:       #3DFFAA;
-  --warn:       #FFB547;
-  --glow:       0 0 12px rgba(0, 229, 208, 0.35);
-  --grid:       linear-gradient(rgba(0, 229, 208, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 208, 0.04) 1px, transparent 1px);
+  --bg-0: #02060A;
+  --bg-1: #04121C;
+  --bg-2: #071E2E;
+  --ink: #DFFFF9;
+  --ink-dim: #7FE5D0;
+  --muted: #4A8B80;
+  --line: rgba(0, 229, 208, 0.14);
+  --line-strong: rgba(0, 229, 208, 0.32);
+  --surface: rgba(0, 229, 208, 0.035);
+  --surface-hi: rgba(0, 229, 208, 0.08);
+  --accent: #00E5D0;
+  --accent-2: #22D3EE;
+  --accent-3: #C4FF4A;
+  --up: #FF3D71;
+  --down: #3DFFAA;
+  --grad-hero: linear-gradient(135deg, #00E5D0, #22D3EE 55%, #C4FF4A);
+  --glow-accent: 0 0 36px rgba(0,229,208,0.45);
 }

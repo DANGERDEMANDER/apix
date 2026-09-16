@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes } from "react-router-dom";
+﻿import { NavLink, Route, Routes } from "react-router-dom";
 import Backtest from "./pages/Backtest";
 import IndexOverview from "./pages/IndexOverview";
 import ThemeToggle from "./components/ThemeToggle";
@@ -7,15 +7,7 @@ function Sidebar() {
   return (
     <aside className="sidebar">
       <h1>APix</h1>
-      <div
-        style={{
-          fontSize: "var(--fs-xs)",
-          color: "var(--muted)",
-          marginBottom: "var(--sp-4)",
-        }}
-      >
-        Real-time Airfare Price Index
-      </div>
+      <div className="brand-sub">Real-time Airfare Price Index</div>
       <nav>
         <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>
           Index Overview
