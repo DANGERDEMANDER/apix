@@ -123,3 +123,117 @@ async def test_robots_disallowed_is_refused(
     f = TieredFetcher("APix/0.1", ethics, rl)
     with pytest.raises(RobotsDisallowedError):
         await f.fetch("https://example.com/search")
+
+
+# ---------------------------------------------------------------------------
+# Tier-3 (Playwright) tests. A fake session is injected so no real browser
+# launches during the test run.
+# ---------------------------------------------------------------------------
+
+
+class _FakeSession:
+    """Stand-in for PlaywrightSession. Returns canned HTML."""
+
+    def __init__(self, html: str) -> None:
+        self._html = html
+        self.entered = False
+        self.exited = False
+
+    async def __aenter__(self) -> _FakeSession:
+        self.entered = True
+        return self
+
+    async def __aexit__(self, *_args: object) -> None:
+        self.exited = True
+
+    async def fetch_html(self, url: str, **_: object) -> str:
+        return self._html
+
+
+async def test_tier3_used_when_tier2_blocked(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _allow_all_robots(monkeypatch)
+    from apix.settings import EnvSettings, get_settings
+
+    real = get_settings()
+    fake_env = EnvSettings(collection_enabled=True, enable_live=True)
+    fake = real.model_copy(update={"env": fake_env})
+    monkeypatch.setattr("apix.collectors.ethics.get_settings", lambda: fake)
+
+    async def fake_get(self: httpx.AsyncClient, url: str) -> httpx.Response:
+        return _fake_response(403, "Forbidden")
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
+
+    created: list[_FakeSession] = []
+
+    def factory() -> _FakeSession:
+        s = _FakeSession("<html><body>Fare: 4777</body></html>")
+        created.append(s)
+        return s
+
+    ethics = RobotsCache(user_agent="APix/0.1")
+    rl = RateLimiter()
+    rl.configure("example.com", rate_limit_rpm=6000, crawl_delay_s=0.0)
+    f = TieredFetcher("APix/0.1", ethics, rl, playwright_session_factory=factory)  # type: ignore[arg-type]
+
+    page = await f.fetch("https://example.com/search")
+    assert page.tier == 3
+    assert "Fare: 4777" in page.html
+    assert len(created) == 1
+    assert created[0].entered is True
+    assert created[0].exited is True
+
+
+async def test_tier3_challenge_page_raises_blocked(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _allow_all_robots(monkeypatch)
+    from apix.settings import EnvSettings, get_settings
+
+    real = get_settings()
+    fake_env = EnvSettings(collection_enabled=True, enable_live=True)
+    fake = real.model_copy(update={"env": fake_env})
+    monkeypatch.setattr("apix.collectors.ethics.get_settings", lambda: fake)
+
+    async def fake_get(self: httpx.AsyncClient, url: str) -> httpx.Response:
+        return _fake_response(403, "Forbidden")
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
+
+    def factory() -> _FakeSession:
+        return _FakeSession("<html><title>Just a moment...</title></html>")
+
+    ethics = RobotsCache(user_agent="APix/0.1")
+    rl = RateLimiter()
+    rl.configure("example.com", rate_limit_rpm=6000, crawl_delay_s=0.0)
+    f = TieredFetcher("APix/0.1", ethics, rl, playwright_session_factory=factory)  # type: ignore[arg-type]
+
+    with pytest.raises(BlockedError, match="tier 3"):
+        await f.fetch("https://example.com/search")
+
+
+async def test_tier3_not_configured_raises_blocked(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _allow_all_robots(monkeypatch)
+    from apix.settings import EnvSettings, get_settings
+
+    real = get_settings()
+    fake_env = EnvSettings(collection_enabled=True, enable_live=True)
+    fake = real.model_copy(update={"env": fake_env})
+    monkeypatch.setattr("apix.collectors.ethics.get_settings", lambda: fake)
+
+    async def fake_get(self: httpx.AsyncClient, url: str) -> httpx.Response:
+        return _fake_response(403, "Forbidden")
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
+
+    ethics = RobotsCache(user_agent="APix/0.1")
+    rl = RateLimiter()
+    rl.configure("example.com", rate_limit_rpm=6000, crawl_delay_s=0.0)
+    f = TieredFetcher("APix/0.1", ethics, rl)  # no factory
+
+    with pytest.raises(BlockedError, match="no playwright_session_factory"):
+        await f.fetch("https://example.com/search")

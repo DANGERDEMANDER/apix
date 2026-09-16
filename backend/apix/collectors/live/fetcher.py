@@ -29,6 +29,7 @@ NotImplementedError with a message naming the batch where it will land.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from urllib.parse import urlparse
@@ -37,6 +38,7 @@ import httpx
 
 from apix.collectors.base import BlockedError, RateLimitedError
 from apix.collectors.ethics import RobotsCache, kill_switch_engaged
+from apix.collectors.live.session import PlaywrightSession
 from apix.collectors.ratelimit import RateLimiter, backoff_seconds
 
 _BROWSER_HEADERS: dict[str, str] = {
@@ -97,11 +99,13 @@ class TieredFetcher:
         ratelimit: RateLimiter,
         *,
         timeout_s: float = 15.0,
+        playwright_session_factory: Callable[[], PlaywrightSession] | None = None,
     ) -> None:
         self._user_agent = user_agent
         self._ethics = ethics
         self._ratelimit = ratelimit
         self._timeout_s = timeout_s
+        self._session_factory = playwright_session_factory
 
     async def _preflight(self, url: str) -> str:
         """Kill switch + robots + rate-limit gate. Returns the domain."""
@@ -137,10 +141,28 @@ class TieredFetcher:
         headers = {"User-Agent": self._user_agent, **_BROWSER_HEADERS}
         return await self._get(url, headers)
 
-    async def _tier3_playwright(self, url: str) -> httpx.Response:
-        raise NotImplementedError(
-            "Tier 3 (Playwright JS rendering) lands in Batch 4. " f"Caller asked for {url}."
-        )
+    async def _tier3_playwright(self, url: str) -> FetchedPage:
+        """Render the page in a real browser. Stock Playwright + Firefox.
+
+        Raises BlockedError when no session factory is configured, since
+        Tier 3 is an opt-in capability (the caller must supply a session).
+        """
+        if self._session_factory is None:
+            raise BlockedError(
+                f"tier 3 requested for {url} but no playwright_session_factory "
+                "configured; caller must inject one"
+            )
+        async with self._session_factory() as session:
+            html = await session.fetch_html(url)
+            if _looks_like_challenge(html):
+                raise BlockedError(f"tier 3 received a challenge page from {url}")
+            return FetchedPage(
+                url=url,
+                status=200,
+                html=html,
+                tier=3,
+                fetched_at=datetime.now(timezone.utc),
+            )
 
     async def fetch(self, url: str) -> FetchedPage:
         """Fetch a page, escalating as needed. Raises on unrecoverable block."""
@@ -192,9 +214,13 @@ class TieredFetcher:
         if r2.status_code == 429:
             raise RateLimitedError(f"429 from {url} after tier-1 retry and tier-2")
 
-        # Tier 3 would go here. Instead we raise, naming the tier.
+        # Tier 3 (Playwright) if a session factory is configured.
+        if self._session_factory is not None:
+            await self._ratelimit.acquire(domain)
+            return await self._tier3_playwright(url)
+
         raise BlockedError(
             f"tier 1 returned {getattr(r1, 'status_code', 'HTTPError')}, "
             f"tier 2 returned {r2.status_code} for {url}; "
-            "tier 3 (Playwright) not yet implemented"
+            "no playwright_session_factory configured for tier 3"
         )
