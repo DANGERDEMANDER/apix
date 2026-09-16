@@ -1,4 +1,4 @@
-/* Design tokens per build spec ?10. No purple gradients. No glassmorphism. */
+/* Design tokens per build spec section 10. No purple gradients. No glassmorphism. */
 :root {
   --ink:        #141825;
   --ground:     #EEF1F6;
@@ -9,6 +9,8 @@
   --up:         #A62B22;
   --down:       #0C6B62;
   --warn:       #C25E10;
+  --glow:       none;
+  --grid:       none;
 
   --radius:     6px;
   --radius-sm:  4px;
@@ -41,4 +43,21 @@
   --up:         #E27068;
   --down:       #3DB8A8;
   --warn:       #E59A4A;
+  --glow:       none;
+  --grid:       none;
+}
+
+:root[data-theme="cyber"] {
+  --ink:        #E6F7FF;
+  --ground:     #05080D;
+  --surface:    #0B1119;
+  --muted:      #5B7A99;
+  --line:       #14232E;
+  --accent:     #00E5D0;
+  --up:         #FF3D71;
+  --down:       #3DFFAA;
+  --warn:       #FFB547;
+  --glow:       0 0 12px rgba(0, 229, 208, 0.35);
+  --grid:       linear-gradient(rgba(0, 229, 208, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 208, 0.04) 1px, transparent 1px);
 }

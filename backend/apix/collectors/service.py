@@ -7,6 +7,7 @@ mode is implemented now; replay and live will follow the same insertion path.
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 
@@ -23,6 +24,9 @@ from apix.models.sources import Source
 from apix.settings import get_settings
 
 _DEFAULT_SEED = 20260916
+
+# Optional progress callback. None means "quiet mode".
+EmitFn = Callable[..., Awaitable[None]]
 
 
 @dataclass(frozen=True)
@@ -90,10 +94,17 @@ async def run_synthetic(
     from_date: date,
     to_date: date,
     seed: int | None = None,
+    emit: EmitFn | None = None,
 ) -> RunReport:
     """Backfill [from_date, to_date] with synthetic quotes."""
     settings = get_settings()
     cfg = SyntheticConfig(seed=seed if seed is not None else _DEFAULT_SEED)
+    if emit is not None:
+        await emit(
+            "info",
+            "synthetic",
+            f"seeding {from_date}..{to_date} (seed={cfg.seed})",
+        )
 
     festivals = load_festivals(settings.env.config_dir)
     source_names = tuple(s.name for s in settings.sources.sources)
@@ -165,6 +176,7 @@ async def run_replay(
     source_name: str,
     collection_date: date,
     advance_days: int,
+    emit: EmitFn | None = None,
 ) -> RunReport:
     """Load one recorded fixture, parse it, insert quotes into fare_quotes."""
     from datetime import datetime, timezone
@@ -173,6 +185,12 @@ async def run_replay(
     from apix.models.runs import RunMode
 
     collector = ReplayCollector(source_name)
+    if emit is not None:
+        await emit(
+            "info",
+            "replay",
+            f"loading fixture for {source_name} advance_days={advance_days}",
+        )
     routes = await _lookup_routes(session)
     sources = await _lookup_sources(session)
     if not routes:
@@ -214,11 +232,28 @@ async def run_replay(
         for q in quotes:
             await _insert_quote(session, run.id, route, sources[source_name], q)
             collected += 1
+            if emit is not None:
+                await emit(
+                    "success",
+                    "replay",
+                    f"{route_label} {q.flight_number} parsed",
+                    source=q.source_name,
+                    base_fare=str(q.base_fare),
+                    total_fare=str(q.total_fare),
+                    decomposition=q.decomposition_method,
+                )
 
     run.finished_at = datetime.now(timezone.utc)
     run.quotes_collected = collected
     run.status = RunStatus.SUCCESS if collected > 0 else RunStatus.PARTIAL
     await session.flush()
+
+    if emit is not None:
+        await emit(
+            "success" if collected > 0 else "warn",
+            "replay",
+            f"done: {collected} quotes, status={run.status.value}",
+        )
 
     return RunReport(
         run_id=run.id,

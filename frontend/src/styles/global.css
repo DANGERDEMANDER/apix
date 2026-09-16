@@ -17,6 +17,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Cyber: faint grid overlay on the ground plane */
+:root[data-theme="cyber"] body {
+  background-image: var(--grid);
+  background-size: 32px 32px;
+  background-position: 0 0;
+}
+
 code, pre, .num, .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -35,6 +42,7 @@ button {
   cursor: pointer;
 }
 button:hover { border-color: var(--accent); }
+:root[data-theme="cyber"] button:hover { box-shadow: var(--glow); }
 
 table {
   width: 100%;
@@ -66,12 +74,21 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   background: var(--surface);
   border-right: 1px solid var(--line);
   padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
 }
 .sidebar h1 {
   font-size: var(--fs-lg);
   margin: 0 0 var(--sp-4);
   letter-spacing: -0.01em;
 }
+:root[data-theme="cyber"] .sidebar h1 {
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+.sidebar nav { flex: 1; }
 .sidebar nav a {
   display: block;
   padding: 6px 8px;
@@ -84,6 +101,11 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   background: var(--ground);
   font-weight: 600;
   color: var(--accent);
+}
+:root[data-theme="cyber"] .sidebar nav a.active {
+  box-shadow: var(--glow);
+  border-left: 2px solid var(--accent);
+  padding-left: 6px;
 }
 
 .main {
@@ -98,6 +120,9 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   padding: var(--sp-4);
   margin-bottom: var(--sp-4);
 }
+:root[data-theme="cyber"] .card {
+  border-color: rgba(0, 229, 208, 0.15);
+}
 
 .card-title {
   font-size: var(--fs-xs);
@@ -106,12 +131,18 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   color: var(--muted);
   margin: 0 0 var(--sp-3);
 }
+:root[data-theme="cyber"] .card-title {
+  color: var(--accent);
+}
 
 .big-value {
   font-family: var(--font-mono);
   font-size: var(--fs-2xl);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+}
+:root[data-theme="cyber"] .big-value {
+  text-shadow: 0 0 20px rgba(0, 229, 208, 0.5);
 }
 
 .delta-up   { color: var(--up); }
@@ -150,4 +181,24 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 @keyframes pulse {
   0%, 100% { opacity: 0.6; }
   50%      { opacity: 1.0; }
+}
+
+.theme-toggle {
+  display: flex;
+  gap: 2px;
+  margin-top: var(--sp-5);
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-3);
+}
+.theme-toggle button {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.theme-toggle button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
 }

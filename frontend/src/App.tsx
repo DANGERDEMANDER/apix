@@ -1,6 +1,7 @@
-﻿import { NavLink, Route, Routes } from "react-router-dom";
+import { NavLink, Route, Routes } from "react-router-dom";
 import Backtest from "./pages/Backtest";
 import IndexOverview from "./pages/IndexOverview";
+import ThemeToggle from "./components/ThemeToggle";
 
 function Sidebar() {
   return (
@@ -26,6 +27,7 @@ function Sidebar() {
           Backtest
         </NavLink>
       </nav>
+      <ThemeToggle />
     </aside>
   );
 }
