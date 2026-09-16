@@ -1,11 +1,13 @@
 ﻿import { NavLink, Route, Routes } from "react-router-dom";
 import Backtest from "./pages/Backtest";
 import IndexOverview from "./pages/IndexOverview";
+import Working from "./pages/Working";
 import ThemeToggle from "./components/ThemeToggle";
 
 function Sidebar() {
   return (
     <aside className="sidebar">
+      <div className="sidebar-comet" aria-hidden />
       <div className="brand">
         <h1>APix</h1>
         <span className="brand-tag">v0.4 · beta</span>
@@ -25,6 +27,12 @@ function Sidebar() {
       <nav>
         <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>
           Index Overview
+        </NavLink>
+        <NavLink
+          to="/working"
+          className={({ isActive }) => (isActive ? "active" : "")}
+        >
+          How it works
         </NavLink>
         <NavLink
           to="/backtest"
@@ -65,6 +73,7 @@ export default function App() {
       <main className="main">
         <Routes>
           <Route path="/" element={<IndexOverview />} />
+          <Route path="/working" element={<Working />} />
           <Route path="/backtest" element={<Backtest />} />
         </Routes>
       </main>

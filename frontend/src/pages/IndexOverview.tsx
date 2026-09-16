@@ -1,4 +1,5 @@
 ﻿import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import {
   Area,
   AreaChart,
@@ -12,6 +13,8 @@ import {
 import { api } from "../api/client";
 import type { IndexPoint } from "../api/types";
 import AnimatedNumber from "../components/AnimatedNumber";
+import TiltCard from "../components/TiltCard";
+import FlightPath from "../components/FlightPath";
 
 function coverageClass(wc: string | null | undefined): string {
   const n = Number(wc ?? 0);
@@ -53,6 +56,83 @@ function withMovingAverage(points: IndexPoint[]) {
   });
 }
 
+interface TickerRoute {
+  id: number;
+  label: string;
+  dgca_pax_annual: number;
+  weight: string;
+}
+
+function Ticker({ routes }: { routes: TickerRoute[] }) {
+  if (!routes.length) return null;
+  const items = [...routes, ...routes];
+  return (
+    <div className="ticker" aria-label="Live route weights">
+      <div className="ticker-track">
+        {items.map((r, i) => (
+          <span key={`${r.id}-${i}`} className="ticker-item">
+            <span className="ticker-label">{r.label}</span>
+            <span className="ticker-sep">·</span>
+            <span className="ticker-weight">
+              {(Number(r.weight) * 100).toFixed(3)}%
+            </span>
+            <span className="ticker-sep">·</span>
+            <span className="ticker-pax">
+              {(r.dgca_pax_annual / 1_000_000).toFixed(1)}M pax
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Kpi({
+  label,
+  value,
+  decimals = 0,
+  unit,
+  sub,
+  tone,
+  delay = 0,
+}: {
+  label: string;
+  value: number | null;
+  decimals?: number;
+  unit?: string;
+  sub: string;
+  tone: "violet" | "gold" | "mint" | "cyan" | "pink";
+  delay?: number;
+}) {
+  const cls =
+    tone === "gold"
+      ? "kpi kpi-gold"
+      : tone === "mint"
+      ? "kpi kpi-mint"
+      : tone === "cyan"
+      ? "kpi kpi-cyan"
+      : tone === "pink"
+      ? "kpi kpi-pink"
+      : "kpi";
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <TiltCard className={cls} intensity={7}>
+        <div className="kpi-label">{label}</div>
+        <div className="kpi-value">
+          <AnimatedNumber value={value} decimals={decimals} />
+          {unit && <span className="unit">{unit}</span>}
+        </div>
+        <div className="kpi-sub">{sub}</div>
+      </TiltCard>
+    </motion.div>
+  );
+}
+
 function ChartBlock({ points }: { points: IndexPoint[] }) {
   const data = withMovingAverage(points);
   const last = [...data].reverse().find((d) => d.value !== null);
@@ -63,7 +143,13 @@ function ChartBlock({ points }: { points: IndexPoint[] }) {
       : null;
 
   return (
-    <div className="card">
+    <motion.div
+      className="card"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+    >
       <div
         style={{
           display: "flex",
@@ -162,7 +248,8 @@ function ChartBlock({ points }: { points: IndexPoint[] }) {
               fill="url(#apixFill)"
               dot={false}
               isAnimationActive
-              animationDuration={900}
+              animationDuration={1200}
+              animationEasing="ease-out"
               connectNulls={false}
             />
             <Line
@@ -190,7 +277,7 @@ function ChartBlock({ points }: { points: IndexPoint[] }) {
           {data.filter((d) => d.value !== null).length} published days
         </span>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -223,6 +310,15 @@ export default function IndexOverview() {
   const coverage = latest.data?.weight_covered ?? null;
   const above = heroValue !== null && heroValue > 100;
 
+  const routeList = routes.data?.routes ?? [];
+  const totalPax = routeList.reduce((a, r) => a + r.dgca_pax_annual, 0);
+  const publishedDays = points.filter((p) => p.status === "published").length;
+  const maxWeight = routeList.reduce(
+    (m, r) => Math.max(m, Number(r.weight)),
+    0,
+  );
+  const topRoute = routeList.find((r) => Number(r.weight) === maxWeight);
+
   return (
     <>
       <span className="kicker">● Live · Index</span>
@@ -234,17 +330,61 @@ export default function IndexOverview() {
         Published every day — nothing hidden.
       </p>
 
+      {routeList.length > 0 && <Ticker routes={routeList} />}
+
       {latest.isError ? (
         <div className="error-banner">
           Could not load latest index: {(latest.error as Error).message}
         </div>
       ) : null}
 
-      <div className="card hero-card">
+      <div className="kpi-grid">
+        <Kpi
+          label="Current Index"
+          value={heroValue}
+          decimals={2}
+          tone="violet"
+          delay={0}
+          sub={above ? "Above the 100 baseline" : "Below the 100 baseline"}
+        />
+        <Kpi
+          label="Coverage"
+          value={coverage !== null ? Number(coverage) * 100 : null}
+          decimals={1}
+          unit="%"
+          tone="mint"
+          delay={0.06}
+          sub="Weight of published routes"
+        />
+        <Kpi
+          label="Published Days"
+          value={publishedDays}
+          tone="cyan"
+          delay={0.12}
+          sub="Days with a full reading"
+        />
+        <Kpi
+          label="Annual Pax"
+          value={totalPax / 1_000_000}
+          decimals={1}
+          unit="M"
+          tone="gold"
+          delay={0.18}
+          sub={topRoute ? `Top route: ${topRoute.label}` : "Across the basket"}
+        />
+      </div>
+
+      <motion.div
+        className="card hero-card"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
         <p className="card-title">Current APIX · Base fare</p>
         <div className="hero-row">
           {latest.isLoading ? (
-            <span className="skeleton" style={{ width: 300, height: 88 }} />
+            <span className="skeleton" style={{ width: 260, height: 64 }} />
           ) : (
             <AnimatedNumber
               value={heroValue}
@@ -290,12 +430,17 @@ export default function IndexOverview() {
             letterSpacing: "0.04em",
           }}
         >
-          {latest.data?.as_of ? `AS OF ${latest.data.as_of}` : "NO PUBLISHED VALUE"}
+          {latest.data?.as_of
+            ? `AS OF ${latest.data.as_of}`
+            : "NO PUBLISHED VALUE"}
           {latest.data?.routes_included != null
             ? ` · ${latest.data.routes_included} ROUTES`
             : ""}
         </div>
-      </div>
+      </motion.div>
+
+      {/* ─── Scrollytelling flight path ─────────────────────── */}
+      {routeList.length > 0 && <FlightPath routes={routeList} />}
 
       {series.isLoading ? (
         <div className="card">
@@ -310,7 +455,13 @@ export default function IndexOverview() {
         <ChartBlock points={points} />
       )}
 
-      <div className="card">
+      <motion.div
+        className="card"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
         <p className="card-title">Routes in basket</p>
         <p className="chart-lede">
           Bigger routes pull harder.{" "}
@@ -327,33 +478,50 @@ export default function IndexOverview() {
               <tr>
                 <th>Route</th>
                 <th className="num">DGCA pax · annual</th>
-                <th className="num">Weight</th>
+                <th style={{ textAlign: "right" }}>Weight share</th>
                 <th>Source</th>
               </tr>
             </thead>
             <tbody>
-              {(routes.data?.routes ?? []).map((r) => (
-                <tr key={r.id}>
-                  <td className="mono" style={{ fontWeight: 600 }}>
-                    {r.label}
-                  </td>
-                  <td className="num">
-                    {r.dgca_pax_annual.toLocaleString("en-IN")}
-                  </td>
-                  <td className="num">{Number(r.weight).toFixed(6)}</td>
-                  <td>
-                    <span
-                      className={
-                        r.weight_source === "dgca-published"
-                          ? "pill ok"
-                          : "pill warn"
-                      }
-                    >
-                      {r.weight_source}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {routeList.map((r) => {
+                const w = Number(r.weight);
+                const pct = maxWeight > 0 ? w / maxWeight : 0;
+                const isTop = w === maxWeight;
+                return (
+                  <tr key={r.id}>
+                    <td className="mono" style={{ fontWeight: 600 }}>
+                      {r.label}
+                    </td>
+                    <td className="num">
+                      {r.dgca_pax_annual.toLocaleString("en-IN")}
+                    </td>
+                    <td>
+                      <div className="wbar">
+                        <div className="wbar-track">
+                          <div
+                            className={isTop ? "wbar-fill top" : "wbar-fill"}
+                            style={{ width: `${pct * 100}%` }}
+                          />
+                        </div>
+                        <span className="wbar-num">
+                          {(w * 100).toFixed(3)}%
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        className={
+                          r.weight_source === "dgca-published"
+                            ? "pill ok"
+                            : "pill warn"
+                        }
+                      >
+                        {r.weight_source}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -367,7 +535,7 @@ export default function IndexOverview() {
           Synthetic weights are placeholders pending real DGCA data. See
           METHODOLOGY.md.
         </div>
-      </div>
+      </motion.div>
 
       <div
         style={{
