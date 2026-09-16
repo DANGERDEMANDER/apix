@@ -1,8 +1,7 @@
 """End-to-end rebuild: CSV -> quotes -> clean -> index_points.
 
-Introspects models at runtime so it works with whatever column names
-the project actually has. Fills required columns with sensible
-defaults so route/source auto-creation never fails on NOT NULL.
+Introspects models at runtime so it works with whatever column names the
+project actually has. Fills required columns with sensible defaults.
 """
 
 from __future__ import annotations
@@ -30,7 +29,7 @@ REFERENCE_CSV = Path(
 )
 
 
-# ─── Introspection helpers ──────────────────────────────────────
+# ─── Introspection helpers ─────────────────────────────────────
 
 
 def _cols(model: Any) -> dict[str, Any]:
@@ -40,8 +39,7 @@ def _cols(model: Any) -> dict[str, Any]:
 
 
 def _required_cols(model: Any) -> list[str]:
-    """Columns without default/nullable that must be supplied."""
-    out = []
+    out: list[str] = []
     for c in _cols(model).values():
         if c.primary_key:
             continue
@@ -56,76 +54,68 @@ def _required_cols(model: Any) -> list[str]:
 
 
 def _default_for_col(col_name: str, col: Any) -> Any:
-    """Best-effort value for a required column we didn't explicitly set."""
-    # Enum types: try to introspect the values
     try:
         py_type = col.type.python_type
     except (AttributeError, NotImplementedError):
         py_type = None
 
-    # Enum: pick first enum value
     if type(col.type).__name__ == "Enum" and hasattr(col.type, "enums"):
         enums = col.type.enums or []
         if enums:
             return enums[0]
 
-    # Boolean
     if py_type is bool:
         return False
-    # Integer
     if py_type is int:
         return 0
-    # Float / Decimal
-    if py_type in (float,):
+    if py_type is float:
         return 0.0
-    if py_type and py_type.__name__ == "Decimal":
+    if py_type is not None and py_type.__name__ == "Decimal":
         return 0
-    # Date / datetime
     if py_type is date_cls:
         return date_cls.today()
     if py_type is datetime:
         return datetime.now(timezone.utc)
-    # Strings
-    if py_type is str or py_type is None:
-        n = col_name.lower()
-        if "url" in n:
-            return "https://example.com"
-        if "name" in n or "slug" in n or "label" in n:
-            return "unknown"
-        if "code" in n:
-            return "UNK"
-        if "note" in n or "desc" in n:
-            return ""
-        if "version" in n:
-            return "1"
-        return "unknown"
 
-    # Unknown — try a string, most things coerce
+    n = col_name.lower()
+    if "url" in n:
+        return "https://example.com"
+    if "name" in n or "slug" in n or "label" in n:
+        return "unknown"
+    if "code" in n:
+        return "UNK"
+    if "version" in n:
+        return "1"
     return "unknown"
 
 
 async def _count(session: Any, model: Any) -> int:
-    return (await session.execute(select(func.count()).select_from(model))).scalar_one()
+    result = await session.execute(select(func.count()).select_from(model))
+    return int(result.scalar_one())
 
 
-# ─── Step 1: ensure routes exist ────────────────────────────────
+# ─── Step 1: ensure routes exist ─────────────────────────────
 
 
-async def _ensure_routes(session: Any, csv_rows: list[dict]) -> dict:
+async def _ensure_routes(session: Any, csv_rows: list[dict[str, str]]) -> dict[str, Any]:
     from apix.models import Route
 
     cols = _cols(Route)
-    route_col = next(
+    route_col: str | None = next(
         (k for k in ("label", "code", "name", "route_label", "route_code") if k in cols),
         None,
     )
-    if not route_col:
+    if route_col is None:
         return {"ok": False, "reason": f"no label/code column; cols={list(cols)}"}
 
-    origin_col = next((k for k in ("origin_iata", "origin", "from_iata") if k in cols), None)
-    dest_col = next((k for k in ("destination_iata", "destination", "to_iata") if k in cols), None)
+    origin_col: str | None = next(
+        (k for k in ("origin_iata", "origin", "from_iata") if k in cols), None
+    )
+    dest_col: str | None = next(
+        (k for k in ("destination_iata", "destination", "to_iata") if k in cols), None
+    )
 
-    needed: dict[str, dict] = {}
+    needed: dict[str, dict[str, str]] = {}
     for r in csv_rows:
         label = (r.get("route") or "").strip()
         if not label:
@@ -136,28 +126,25 @@ async def _ensure_routes(session: Any, csv_rows: list[dict]) -> dict:
             "destination": (r.get("destination") or (parts[1] if len(parts) > 1 else "")).strip(),
         }
 
-    existing = {
-        getattr(rt, route_col, None) for rt in (await session.execute(select(Route))).scalars()
-    }
-    existing.discard(None)
+    existing: set[Any] = set()
+    for rt in (await session.execute(select(Route))).scalars():
+        val = getattr(rt, route_col)
+        if val is not None:
+            existing.add(val)
 
     created = 0
     for label, info in needed.items():
         if label in existing:
             continue
-
         payload: dict[str, Any] = {route_col: label}
         if origin_col:
             payload[origin_col] = info["origin"]
         if dest_col:
             payload[dest_col] = info["destination"]
-
-        # Fill every remaining required column with a default
         for req in _required_cols(Route):
             if req in payload:
                 continue
             payload[req] = _default_for_col(req, cols[req])
-
         session.add(Route(**payload))
         created += 1
 
@@ -165,37 +152,28 @@ async def _ensure_routes(session: Any, csv_rows: list[dict]) -> dict:
     return {"ok": True, "created": created, "total": len(needed)}
 
 
-# ─── Step 2: ensure sources exist ───────────────────────────────
+# ─── Step 2: ensure sources exist ─────────────────────────────
 
 
-async def _ensure_sources(session: Any, csv_rows: list[dict]) -> dict:
+async def _ensure_sources(session: Any, csv_rows: list[dict[str, str]]) -> dict[str, Any]:
     from apix.models import Source
 
     cols = _cols(Source)
-    name_col = next(
-        (k for k in ("name", "slug", "code", "key") if k in cols),
-        None,
-    )
-    if not name_col:
+    name_col: str | None = next((k for k in ("name", "slug", "code", "key") if k in cols), None)
+    if name_col is None:
         return {"ok": False, "reason": f"no name/slug column; cols={list(cols)}"}
 
-    # Figure out sensible enum values by source name
     kind_col = cols.get("kind")
     kind_value_for: dict[str, str] = {}
     if kind_col is not None and type(kind_col.type).__name__ == "Enum":
         enum_values = list(kind_col.type.enums or [])
-        # Heuristic mapping
         for r in csv_rows:
             src = (r.get("source") or "").strip()
             if not src:
                 continue
             lower = src.lower()
-            if (
-                "google" in lower
-                and "scrape" in enum_values
-                or "makemytrip" in lower
-                and "scrape" in enum_values
-            ):
+            is_scraper = "google" in lower or "makemytrip" in lower
+            if is_scraper and "scrape" in enum_values:
                 kind_value_for[src] = "scrape"
             elif "amadeus" in lower and "api" in enum_values or "api" in enum_values:
                 kind_value_for[src] = "api"
@@ -203,28 +181,23 @@ async def _ensure_sources(session: Any, csv_rows: list[dict]) -> dict:
                 kind_value_for[src] = enum_values[0]
 
     needed = {(r.get("source") or "").strip() for r in csv_rows if r.get("source")}
-    existing = {
-        getattr(s, name_col, None) for s in (await session.execute(select(Source))).scalars()
-    }
-    existing.discard(None)
+    existing: set[Any] = set()
+    for src in (await session.execute(select(Source))).scalars():
+        val = getattr(src, name_col)
+        if val is not None:
+            existing.add(val)
 
     created = 0
     for name in needed:
         if name in existing:
             continue
-
         payload: dict[str, Any] = {name_col: name}
-
-        # Prefer explicit kind mapping
         if kind_col is not None and name in kind_value_for:
             payload["kind"] = kind_value_for[name]
-
-        # Fill every remaining required column with a default
         for req in _required_cols(Source):
             if req in payload:
                 continue
             payload[req] = _default_for_col(req, cols[req])
-
         session.add(Source(**payload))
         created += 1
 
@@ -232,41 +205,43 @@ async def _ensure_sources(session: Any, csv_rows: list[dict]) -> dict:
     return {"ok": True, "created": created, "total": len(needed)}
 
 
-# ─── Step 3: load CSV into quotes ───────────────────────────────
+# ─── Step 3: load CSV into quotes ────────────────────────────
 
 
-async def _load_quotes(session: Any, csv_rows: list[dict]) -> dict:
+async def _load_quotes(session: Any, csv_rows: list[dict[str, str]]) -> dict[str, Any]:
     from apix.models import FareQuote, Route, Source
 
     fq_cols = _cols(FareQuote)
     rt_cols = _cols(Route)
     src_cols = _cols(Source)
 
-    route_col = next((k for k in ("label", "code", "name") if k in rt_cols), None)
-    src_col = next((k for k in ("name", "slug", "code") if k in src_cols), None)
-
-    price_col = next(
+    route_col: str | None = next((k for k in ("label", "code", "name") if k in rt_cols), None)
+    src_col: str | None = next((k for k in ("name", "slug", "code") if k in src_cols), None)
+    price_col: str | None = next(
         (k for k in ("fare_inr", "fare", "price", "amount", "raw_fare", "value") if k in fq_cols),
         None,
     )
-    date_col = next(
-        (k for k in ("observed_date", "date", "quote_date", "day") if k in fq_cols),
-        None,
+    date_col: str | None = next(
+        (k for k in ("observed_date", "date", "quote_date", "day") if k in fq_cols), None
     )
-    ts_col = next(
+    ts_col: str | None = next(
         (k for k in ("captured_at", "observed_at", "collected_at", "fetched_at") if k in fq_cols),
         None,
     )
 
-    if not price_col:
+    if price_col is None:
         return {"ok": False, "reason": f"no price column; fq_cols={list(fq_cols)}"}
+    if route_col is None:
+        return {"ok": False, "reason": f"Route has no label column; cols={list(rt_cols)}"}
+    if src_col is None:
+        return {"ok": False, "reason": f"Source has no name column; cols={list(src_cols)}"}
 
-    route_map = {
-        getattr(rt, route_col, None): rt for rt in (await session.execute(select(Route))).scalars()
-    }
-    source_map = {
-        getattr(s, src_col, None): s for s in (await session.execute(select(Source))).scalars()
-    }
+    route_map: dict[Any, Any] = {}
+    for rt in (await session.execute(select(Route))).scalars():
+        route_map[getattr(rt, route_col)] = rt
+    source_map: dict[Any, Any] = {}
+    for s in (await session.execute(select(Source))).scalars():
+        source_map[getattr(s, src_col)] = s
 
     inserted = 0
     skipped_reasons: dict[str, int] = {}
@@ -302,13 +277,11 @@ async def _load_quotes(session: Any, csv_rows: list[dict]) -> dict:
         if "source_id" in fq_cols:
             payload["source_id"] = s.id
 
-        # Fill every remaining required column with a default
         for req in _required_cols(FareQuote):
             if req in payload:
                 continue
             payload[req] = _default_for_col(req, fq_cols[req])
 
-        # Overrides with real values
         payload[price_col] = fare
         if date_col:
             try:
@@ -343,12 +316,15 @@ async def _load_quotes(session: Any, csv_rows: list[dict]) -> dict:
     }
 
 
-# ─── Step 4: run cleaning / index stages ────────────────────────
+# ─── Step 4: run cleaning / index ────────────────────────────
 
 
 async def _run_stage(
-    stage_name: str, module_names: list[str], entries: list[str], session: Any
-) -> dict:
+    stage_name: str,
+    module_names: list[str],
+    entries: list[str],
+    session: Any,
+) -> dict[str, Any]:
     entry: Callable[..., Any] | None = None
     via = ""
 
@@ -371,39 +347,78 @@ async def _run_stage(
     sig = pyinspect.signature(entry)
     params = list(sig.parameters.keys())
 
-    async def _try(*args, **kwargs):
+    async def _try(*args: Any, **kwargs: Any) -> Any:
         if pyinspect.iscoroutinefunction(entry):
             return await entry(*args, **kwargs)
         return entry(*args, **kwargs)
 
     last_err: Exception | None = None
-    for call in (lambda: _try(session), lambda: _try()):
-        try:
-            result = await call()
-            return {"ok": True, "via": via, "signature": params, "result": str(result)[:200]}
-        except TypeError as e:
-            last_err = e
-            continue
-        except Exception as e:
-            return {
-                "ok": False,
-                "via": via,
-                "signature": params,
-                "error": f"{type(e).__name__}: {e}",
-            }
+    try:
+        result = await _try(session)
+        return {
+            "ok": True,
+            "via": via,
+            "signature": params,
+            "result": str(result)[:200],
+        }
+    except TypeError as e:
+        last_err = e
+    except Exception as e:
+        return {
+            "ok": False,
+            "via": via,
+            "signature": params,
+            "error": f"{type(e).__name__}: {e}",
+        }
 
-    return {
-        "ok": False,
-        "via": via,
-        "signature": params,
-        "error": f"all call shapes failed: {last_err}",
+    try:
+        result = await _try()
+        return {
+            "ok": True,
+            "via": via,
+            "signature": params,
+            "result": str(result)[:200],
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "via": via,
+            "signature": params,
+            "error": f"all call shapes failed: {last_err}; no-arg error: {type(e).__name__}: {e}",
+        }
+
+
+# ─── Main entry ──────────────────────────────────────────────
+
+
+async def _counts(session_maker: Any) -> dict[str, Any]:
+    import apix.models as m
+
+    models = {
+        "routes": "Route",
+        "sources": "Source",
+        "quotes": "FareQuote",
+        "clean_fares": "CleanFare",
+        "daily_prices": "DailyRoutePrice",
+        "index_values": "IndexValue",
+        "dgca_refs": "DgcaReference",
     }
 
+    out: dict[str, Any] = {}
+    async with session_maker() as session:
+        for label, cls_name in models.items():
+            cls = getattr(m, cls_name, None)
+            if cls is None:
+                out[label] = f"missing class {cls_name}"
+                continue
+            try:
+                out[label] = await _count(session, cls)
+            except Exception as e:
+                out[label] = f"error: {type(e).__name__}: {e}"
+    return out
 
-# ─── Main entry ─────────────────────────────────────────────────
 
-
-async def rebuild_all() -> dict:
+async def rebuild_all() -> dict[str, Any]:
     from apix.db import get_sessionmaker
 
     out: dict[str, Any] = {"csv": str(REFERENCE_CSV)}
@@ -450,32 +465,4 @@ async def rebuild_all() -> dict:
         await session.commit()
 
     out["totals"] = await _counts(session_maker)
-    return out
-
-
-async def _counts(session_maker) -> dict:
-    """Count rows in each pipeline model."""
-    import apix.models as m
-
-    models = {
-        "routes": "Route",
-        "sources": "Source",
-        "quotes": "FareQuote",
-        "clean_fares": "CleanFare",
-        "daily_prices": "DailyRoutePrice",
-        "index_values": "IndexValue",
-        "dgca_refs": "DgcaReference",
-    }
-
-    out: dict[str, Any] = {}
-    async with session_maker() as session:
-        for label, cls_name in models.items():
-            cls = getattr(m, cls_name, None)
-            if cls is None:
-                out[label] = f"missing class {cls_name}"
-                continue
-            try:
-                out[label] = await _count(session, cls)
-            except Exception as e:
-                out[label] = f"error: {type(e).__name__}: {e}"
     return out

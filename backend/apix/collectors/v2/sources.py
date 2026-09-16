@@ -19,7 +19,7 @@ def _gf_parser(payload: Any) -> list[float]:
     return parse_google_flights(payload)
 
 
-SOURCES: list[dict] = [
+SOURCES: list[dict[str, Any]] = [
     {
         "name": "Google Flights",
         "kind": "api",

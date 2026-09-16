@@ -7,6 +7,7 @@ import csv as _csv
 import json
 import logging
 import uuid
+from typing import Any
 
 from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
@@ -37,7 +38,7 @@ DEFAULT_ROUTES = [
 
 
 @router.post("/start")
-async def start_collection() -> dict:
+async def start_collection() -> dict[str, Any]:
     job_id = uuid.uuid4().hex[:12]
     queue: asyncio.Queue[ProgressEvent] = asyncio.Queue()
     JOBS[job_id] = queue
@@ -47,7 +48,12 @@ async def start_collection() -> dict:
     return {"job_id": job_id, "routes": len(DEFAULT_ROUTES), "sources": len(SOURCES)}
 
 
-async def _run(job_id, routes, sources, queue) -> None:
+async def _run(
+    job_id: str,
+    routes: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+    queue: asyncio.Queue[ProgressEvent],
+) -> None:
     try:
         await run_collection(job_id, routes, sources, progress_queue=queue)
     except Exception as e:
@@ -76,12 +82,12 @@ async def _run(job_id, routes, sources, queue) -> None:
 
 
 @router.get("/stream/{job_id}")
-async def stream_progress(job_id: str):
+async def stream_progress(job_id: str) -> Any:
     queue = JOBS.get(job_id)
     if not queue:
         return {"error": "unknown job"}
 
-    async def event_gen():
+    async def event_gen() -> Any:
         while True:
             event: ProgressEvent = await queue.get()
             if event.status == "__end__":
@@ -104,7 +110,7 @@ async def stream_progress(job_id: str):
 
 
 @router.get("/preview")
-async def preview_csv(limit: int = 50) -> dict:
+async def preview_csv(limit: int = 50) -> dict[str, Any]:
     if not REFERENCE_CSV.exists():
         return {"rows": [], "total": 0, "path": str(REFERENCE_CSV), "exists": False}
     with REFERENCE_CSV.open("r", encoding="utf-8", newline="") as f:
@@ -118,26 +124,27 @@ async def preview_csv(limit: int = 50) -> dict:
 
 
 @router.post("/rebuild")
-async def rebuild() -> dict:
+async def rebuild() -> dict[str, Any]:
     """CSV -> quotes -> clean -> index_points. Full chain, introspected."""
     return await rebuild_all()
 
 
 @router.get("/diagnose")
-async def pipeline_diagnose() -> dict:
+async def pipeline_diagnose() -> dict[str, Any]:
     return await _diagnose()
 
 
 @router.get("/db-state")
-async def db_state() -> dict:
+async def db_state() -> dict[str, Any]:
     """Counts in each pipeline table."""
     from sqlalchemy import func, select
 
     from apix.db import get_sessionmaker
-    from apix.models import CleanPrice, FareQuote, IndexPoint, Route, Source
+    from apix.models import CleanFare, DailyRoutePrice, FareQuote, IndexValue, Route, Source
 
-    async def _count(session, model):
-        return (await session.execute(select(func.count()).select_from(model))).scalar_one()
+    async def _count(session: Any, model: Any) -> int:
+        result = await session.execute(select(func.count()).select_from(model))
+        return int(result.scalar_one())
 
     session_maker = get_sessionmaker()
     async with session_maker() as session:
@@ -145,6 +152,7 @@ async def db_state() -> dict:
             "routes": await _count(session, Route),
             "sources": await _count(session, Source),
             "quotes": await _count(session, FareQuote),
-            "clean_prices": await _count(session, CleanPrice),
-            "index_points": await _count(session, IndexPoint),
+            "clean_fares": await _count(session, CleanFare),
+            "daily_prices": await _count(session, DailyRoutePrice),
+            "index_values": await _count(session, IndexValue),
         }

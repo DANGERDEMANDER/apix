@@ -69,7 +69,7 @@ async def _call_entry(entry: Any, session: Any) -> Any:
         return entry()
 
 
-async def run_full_pipeline() -> dict:
+async def run_full_pipeline() -> dict[str, Any]:
     from apix.db import get_sessionmaker
 
     summary: dict[str, Any] = {"steps": []}
@@ -128,7 +128,7 @@ async def run_full_pipeline() -> dict:
     return summary
 
 
-async def diagnose() -> dict:
+async def diagnose() -> dict[str, Any]:
     out: dict[str, Any] = {}
     for _name, modules, _entries in STAGES:
         for mod_name in modules:

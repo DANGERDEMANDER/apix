@@ -19,7 +19,7 @@ async def search_fares(
     *,
     departure_date: str | None = None,
     max_results: int = 5,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     from datetime import date, timedelta
 
     import httpx

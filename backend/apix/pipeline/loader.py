@@ -26,7 +26,7 @@ DAY_CANDIDATES = ["date", "observed_date", "quote_date", "day"]
 SOURCE_NAME_CANDIDATES = ["name", "slug", "code", "key"]
 
 
-def _pick(row: dict, keys: list[str], default: Any = None) -> Any:
+def _pick(row: dict[str, str], keys: list[str], default: Any = None) -> Any:
     for k in keys:
         if k in row and row[k] not in (None, ""):
             return row[k]
@@ -37,7 +37,7 @@ def _columns(model: Any) -> set[str]:
     return {c.key for c in sa_inspect(model).columns}
 
 
-async def load_csv_to_db(csv_path: Path) -> dict:
+async def load_csv_to_db(csv_path: Path) -> dict[str, Any]:
     """Idempotently load rows from `csv_path` into the quotes table."""
     from apix.db import get_sessionmaker
     from apix.models import FareQuote, Route, Source

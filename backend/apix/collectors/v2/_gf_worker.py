@@ -9,12 +9,15 @@ from __future__ import annotations
 import contextlib
 import json
 import sys
+from typing import Any
 
 from playwright.sync_api import sync_playwright
 from selectolax.parser import HTMLParser
 
 
-def scrape(origin: str, destination: str, departure_date: str, max_results: int) -> list[dict]:
+def scrape(
+    origin: str, destination: str, departure_date: str, max_results: int
+) -> list[dict[str, Any]]:
     url = (
         f"https://www.google.com/travel/flights?"
         f"q=flights+from+{origin}+to+{destination}"

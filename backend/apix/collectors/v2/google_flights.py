@@ -28,7 +28,7 @@ def _run_worker(
     destination: str,
     departure_date: str,
     max_results: int,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Blocking. Runs in a thread via run_in_executor."""
     # Prefer running the module by file path, so cwd doesn't matter
     worker_path = Path(__file__).parent / "_gf_worker.py"
@@ -56,7 +56,10 @@ def _run_worker(
         raise RuntimeError(f"worker failed: {detail[:200]}")
 
     try:
-        return json.loads(result.stdout)
+        parsed = json.loads(result.stdout)
+        if not isinstance(parsed, list):
+            raise RuntimeError(f"worker output not a list: {type(parsed).__name__}")
+        return parsed
     except json.JSONDecodeError as e:
         raise RuntimeError(f"worker output not JSON: {e}; raw={result.stdout[:200]}") from e
 
@@ -67,7 +70,7 @@ async def search_fares(
     *,
     departure_date: str | None = None,
     max_results: int = 5,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     if not departure_date:
         departure_date = (date.today() + timedelta(days=30)).isoformat()
 

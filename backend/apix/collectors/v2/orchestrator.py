@@ -15,6 +15,7 @@ import tempfile
 from dataclasses import asdict, dataclass
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 
 LOG = logging.getLogger("apix.collector.orchestrator")
 
@@ -53,14 +54,14 @@ class QuoteRow:
 # --- Atomic CSV writer -----------------------------------------
 
 
-def _read_existing() -> list[dict]:
+def _read_existing() -> list[dict[str, str]]:
     if not REFERENCE_CSV.exists():
         return []
     with REFERENCE_CSV.open("r", encoding="utf-8", newline="") as f:
         return list(csv.DictReader(f))
 
 
-def _write_atomic(rows: list[dict]) -> None:
+def _write_atomic(rows: list[dict[str, str]]) -> None:
     REFERENCE_CSV.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=".reference.", suffix=".csv", dir=str(REFERENCE_CSV.parent))
     os.close(fd)
@@ -105,8 +106,8 @@ async def append_quotes(new_rows: list[QuoteRow]) -> None:
 
 async def _worker_api(
     job_id: str,
-    route: dict,
-    source: dict,
+    route: dict[str, Any],
+    source: dict[str, Any],
     queue: asyncio.Queue[ProgressEvent],
     semaphore: asyncio.Semaphore,
 ) -> list[QuoteRow]:
@@ -130,11 +131,14 @@ async def _worker_api(
 
     needs_browser = source.get("needs_browser", False)
 
-    async def call_search() -> list[dict]:
-        return await source["search"](
+    async def call_search() -> list[dict[str, Any]]:
+        raw: Any = await source["search"](
             route["origin_iata"],
             route["destination_iata"],
         )
+        if not isinstance(raw, list):
+            return []
+        return raw
 
     try:
         if needs_browser:
@@ -181,8 +185,8 @@ async def _worker_api(
 
 async def run_collection(
     job_id: str,
-    routes: list[dict],
-    sources: list[dict],
+    routes: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
     *,
     progress_queue: asyncio.Queue[ProgressEvent],
 ) -> list[QuoteRow]:
