@@ -14,7 +14,7 @@ from apix.collectors.airlines.indigo import (
 )
 from apix.collectors.base import ParseError
 
-_FIXTURE = Path(__file__).resolve().parents[2] / "fixtures" / "indigo" / "search_del_bom.html"
+_FIXTURE = Path(__file__).resolve().parents[2] / "fixtures" / "indigo" / "del-bom_15d.html"
 
 
 def _load_fixture() -> str:

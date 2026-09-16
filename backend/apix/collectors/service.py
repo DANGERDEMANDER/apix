@@ -152,3 +152,77 @@ async def run_synthetic(
         quotes_expected=expected,
         status=run.status.value,
     )
+
+
+# ---------------------------------------------------------------------------
+# Replay mode
+# ---------------------------------------------------------------------------
+
+
+async def run_replay(
+    session: AsyncSession,
+    *,
+    source_name: str,
+    collection_date: date,
+    advance_days: int,
+) -> RunReport:
+    """Load one recorded fixture, parse it, insert quotes into fare_quotes."""
+    from datetime import datetime, timezone
+
+    from apix.collectors.replay import ReplayCollector
+    from apix.models.runs import RunMode
+
+    collector = ReplayCollector(source_name)
+    routes = await _lookup_routes(session)
+    sources = await _lookup_sources(session)
+    if not routes:
+        raise RuntimeError("no routes in DB - run apix seed first")
+    if source_name not in sources:
+        raise RuntimeError(f"unknown source {source_name!r}")
+
+    run = CollectionRun(
+        mode=RunMode.REPLAY,
+        started_at=datetime.now(timezone.utc),
+        status=RunStatus.RUNNING,
+        quotes_collected=0,
+        quotes_expected=len(routes),
+        blocked_sources=[],
+        error_summary={},
+        seed=None,
+        notes=f"replay: {source_name} advance_days={advance_days}",
+    )
+    session.add(run)
+    await session.flush()
+
+    collected = 0
+    for route_label, route in routes.items():
+        try:
+            quotes = collector.collect_from_fixture(
+                route_label=route_label,
+                advance_days=advance_days,
+                collected_at=datetime.combine(
+                    collection_date,
+                    datetime.min.time(),
+                    tzinfo=timezone.utc,
+                ),
+            )
+        except FileNotFoundError:
+            continue
+        except Exception as exc:
+            run.error_summary[route_label] = str(exc)
+            continue
+        for q in quotes:
+            await _insert_quote(session, run.id, route, sources[source_name], q)
+            collected += 1
+
+    run.finished_at = datetime.now(timezone.utc)
+    run.quotes_collected = collected
+    run.status = RunStatus.SUCCESS if collected > 0 else RunStatus.PARTIAL
+    await session.flush()
+
+    return RunReport(
+        run_id=run.id,
+        quotes_collected=collected,
+        quotes_expected=len(routes),
+        status=run.status.value,
+    )

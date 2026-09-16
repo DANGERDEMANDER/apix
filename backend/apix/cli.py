@@ -102,6 +102,31 @@ async def _run_backtest() -> None:
     print(f"  {result.provenance_note}")
 
 
+async def _collect_replay(source_name: str, collection_date: date, advance_days: int) -> None:
+    configure_logging()
+    from apix.collectors.service import run_replay
+
+    async with get_sessionmaker()() as session:
+        report = await run_replay(
+            session,
+            source_name=source_name,
+            collection_date=collection_date,
+            advance_days=advance_days,
+        )
+        await session.commit()
+    log.info(
+        "apix.collect.replay.done",
+        source=source_name,
+        run_id=report.run_id,
+        quotes=report.quotes_collected,
+        status=report.status,
+    )
+    print(
+        f"Replay {source_name}: {report.quotes_collected} quotes "
+        f"collected of {report.quotes_expected} expected ({report.status})."
+    )
+
+
 def _parse_date(s: str) -> date:
     try:
         return date.fromisoformat(s)
@@ -116,10 +141,27 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("seed", help="Seed routes, sources, and DGCA reference")
 
     collect = sub.add_parser("collect", help="Collect fare quotes (synthetic mode by default)")
-    collect.add_argument("--mode", choices=["synthetic"], default="synthetic")
-    collect.add_argument("--from", dest="from_date", type=_parse_date, required=True)
-    collect.add_argument("--to", dest="to_date", type=_parse_date, required=True)
+    collect.add_argument("--mode", choices=["synthetic", "replay"], default="synthetic")
+    collect.add_argument("--from", dest="from_date", type=_parse_date, default=None)
+    collect.add_argument("--to", dest="to_date", type=_parse_date, default=None)
     collect.add_argument("--seed", type=int, default=None)
+    collect.add_argument(
+        "--source", type=str, default=None, help="(replay) source name, e.g. IndiGo"
+    )
+    collect.add_argument(
+        "--date",
+        dest="collection_date",
+        type=_parse_date,
+        default=None,
+        help="(replay) collection date",
+    )
+    collect.add_argument(
+        "--advance",
+        dest="advance_days",
+        type=int,
+        default=15,
+        help="(replay) advance-purchase window in days",
+    )
 
     index = sub.add_parser("index", help="Compute APix index from collected quotes")
     index.add_argument("--from", dest="from_date", type=_parse_date, required=True)
@@ -133,9 +175,19 @@ def main(argv: list[str] | None = None) -> int:
         asyncio.run(_seed_all())
         return 0
     if args.cmd == "collect":
-        if args.from_date > args.to_date:
-            parser.error("--from must be <= --to")
-        asyncio.run(_collect_synthetic(args.from_date, args.to_date, args.seed))
+        if args.mode == "synthetic":
+            if args.from_date is None or args.to_date is None:
+                parser.error("--from and --to required for synthetic mode")
+            if args.from_date > args.to_date:
+                parser.error("--from must be <= --to")
+            asyncio.run(_collect_synthetic(args.from_date, args.to_date, args.seed))
+            return 0
+        # replay
+        if args.source is None:
+            parser.error("--source required for replay mode")
+        if args.collection_date is None:
+            parser.error("--date required for replay mode")
+        asyncio.run(_collect_replay(args.source, args.collection_date, args.advance_days))
         return 0
     if args.cmd == "index":
         if args.from_date > args.to_date:
