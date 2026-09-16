@@ -57,3 +57,33 @@ class FareCollector(ABC):
     ) -> list[RawQuote]:
         """Return zero or more quotes for this cell."""
         raise NotImplementedError
+
+
+# ---------------------------------------------------------------------------
+# Collector-layer errors. Every live fetch either returns a RawQuote list or
+# raises one of these, so callers cannot silently swallow a failure.
+# ---------------------------------------------------------------------------
+
+
+class CollectorError(Exception):
+    """Base for every collector-layer failure."""
+
+
+class RobotsDisallowedError(CollectorError):
+    """robots.txt disallows the target path. Refused, not evaded."""
+
+
+class KillSwitchError(CollectorError):
+    """APIX_COLLECTION_ENABLED is false. Live collection is refused."""
+
+
+class BlockedError(CollectorError):
+    """Source returned an anti-bot challenge or a 401/403 we do not evade."""
+
+
+class RateLimitedError(CollectorError):
+    """Source returned 429 and backoff did not resolve it."""
+
+
+class ParseError(CollectorError):
+    """Response was fetched but does not contain parseable fare data."""
