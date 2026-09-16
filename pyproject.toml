@@ -20,10 +20,19 @@ dependencies = [
     "pyyaml==6.0.2",
     "playwright==1.48.0",
     "python-dotenv==1.0.1",
+    "curl-cffi>=0.16.3",
+    "selectolax>=0.4.11",
+    "patchright>=1.51.3",
+    "sse-starlette>=3.0.3",
 ]
 
 [project.scripts]
 apix = "apix.cli:main"
+
+[project.optional-dependencies]
+captcha-api = [
+    "2captcha-python>=2.1.1",
+]
 
 [dependency-groups]
 dev = [

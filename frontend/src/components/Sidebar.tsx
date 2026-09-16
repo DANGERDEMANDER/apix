@@ -37,6 +37,21 @@ function IconTarget() {
   );
 }
 
+function IconRadar() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 12 L18 8" />
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+      <path d="M12 3v3" />
+      <path d="M21 12h-3" />
+      <path d="M12 21v-3" />
+      <path d="M3 12h3" />
+    </svg>
+  );
+}
+
 function IconPlane() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -50,6 +65,7 @@ const NAV = [
   { to: "/", end: true, label: "Index Overview", Icon: IconChart },
   { to: "/working", end: false, label: "How it works", Icon: IconBook },
   { to: "/backtest", end: false, label: "Backtest", Icon: IconTarget },
+  { to: "/collector", end: false, label: "Collector", Icon: IconRadar },
 ];
 
 export default function Sidebar({ collapsed, onToggle }: Props) {

@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import PageBackground from "./components/PageBackground";
 import Backtest from "./pages/Backtest";
+import Collector from "./pages/Collector";
 import IndexOverview from "./pages/IndexOverview";
 import Working from "./pages/Working";
 
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/" element={<IndexOverview />} />
             <Route path="/working" element={<Working />} />
             <Route path="/backtest" element={<Backtest />} />
+            <Route path="/collector" element={<Collector />} />
           </Routes>
         </main>
       </div>

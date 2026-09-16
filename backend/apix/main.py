@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from apix import __version__
+from apix.api.collect import router as collect_router
 from apix.api.router import router as api_router
 from apix.db import get_engine
 from apix.logging import configure_logging, get_logger
@@ -45,11 +46,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[get_settings().env.cors_origin],
     allow_credentials=False,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
 app.include_router(api_router)
+app.include_router(collect_router)
 
 
 @app.get("/healthz")

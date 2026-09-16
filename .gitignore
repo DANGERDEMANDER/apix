@@ -36,3 +36,9 @@ tmp/
 apix-full.zip
 apix-snapshot.txt
 git-info.txt
+# runtime output
+reference.csv
+backend/reference.csv
+
+# stray npm artifact
+/package-lock.json
