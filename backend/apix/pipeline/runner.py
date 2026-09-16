@@ -1,9 +1,10 @@
-﻿"""Run the full chain: load CSV, clean, index.
+"""Run the full chain: load CSV, clean, index.
 
 Uses whichever entry point actually exists in the target module. If a
 stage fails to find anything, it returns the module's public functions
 so we can see what to call instead.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -51,8 +52,7 @@ def _discover_entry(module_name: str, names: list[str]) -> tuple[Any | None, str
             return getattr(mod, name), f"{module_name}.{name}"
 
     public = [
-        n for n, o in pyinspect.getmembers(mod, pyinspect.isfunction)
-        if not n.startswith("_")
+        n for n, o in pyinspect.getmembers(mod, pyinspect.isfunction) if not n.startswith("_")
     ]
     return None, f"no matching entry point in {module_name}; available: {public}"
 
@@ -95,27 +95,35 @@ async def run_full_pipeline() -> dict:
                 reason = via
 
             if entry is None:
-                summary["steps"].append({
-                    "step": stage_name, "ok": False, "reason": reason,
-                })
+                summary["steps"].append(
+                    {
+                        "step": stage_name,
+                        "ok": False,
+                        "reason": reason,
+                    }
+                )
                 continue
 
             try:
                 result = await _call_entry(entry, session)
-                summary["steps"].append({
-                    "step": stage_name,
-                    "ok": True,
-                    "via": via,
-                    "result": str(result)[:200] if result is not None else None,
-                })
+                summary["steps"].append(
+                    {
+                        "step": stage_name,
+                        "ok": True,
+                        "via": via,
+                        "result": str(result)[:200] if result is not None else None,
+                    }
+                )
             except Exception as e:
                 LOG.exception("%s failed", stage_name)
-                summary["steps"].append({
-                    "step": stage_name,
-                    "ok": False,
-                    "via": via,
-                    "error": f"{type(e).__name__}: {e}",
-                })
+                summary["steps"].append(
+                    {
+                        "step": stage_name,
+                        "ok": False,
+                        "via": via,
+                        "error": f"{type(e).__name__}: {e}",
+                    }
+                )
 
     return summary
 
@@ -127,7 +135,8 @@ async def diagnose() -> dict:
             try:
                 mod = importlib.import_module(mod_name)
                 out[mod_name] = [
-                    n for n, o in pyinspect.getmembers(mod, pyinspect.isfunction)
+                    n
+                    for n, o in pyinspect.getmembers(mod, pyinspect.isfunction)
                     if not n.startswith("_")
                 ]
             except ImportError as e:

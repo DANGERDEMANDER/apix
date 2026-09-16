@@ -1,9 +1,10 @@
-﻿"""Google Flights scraper.
+"""Google Flights scraper.
 
 Runs the Playwright work in a subprocess so it is not affected by
 uvicorn's Windows event-loop policy. The subprocess prints JSON to
 stdout; we parse and return it.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -46,8 +47,8 @@ def _run_worker(
             text=True,
             timeout=WORKER_TIMEOUT_S,
         )
-    except subprocess.TimeoutExpired:
-        raise RuntimeError(f"worker timeout after {WORKER_TIMEOUT_S}s")
+    except subprocess.TimeoutExpired as e:
+        raise RuntimeError(f"worker timeout after {WORKER_TIMEOUT_S}s") from e
 
     if result.returncode != 0:
         stderr = (result.stderr or "").strip().splitlines()
@@ -57,7 +58,7 @@ def _run_worker(
     try:
         return json.loads(result.stdout)
     except json.JSONDecodeError as e:
-        raise RuntimeError(f"worker output not JSON: {e}; raw={result.stdout[:200]}")
+        raise RuntimeError(f"worker output not JSON: {e}; raw={result.stdout[:200]}") from e
 
 
 async def search_fares(
@@ -73,9 +74,7 @@ async def search_fares(
     loop = asyncio.get_running_loop()
     fares = await loop.run_in_executor(
         None,
-        functools.partial(
-            _run_worker, origin, destination, departure_date, max_results
-        ),
+        functools.partial(_run_worker, origin, destination, departure_date, max_results),
     )
     LOG.info("gf %s->%s parsed %d fares", origin, destination, len(fares))
     return fares
@@ -88,8 +87,4 @@ def parse_google_flights(payload: Any) -> list[float]:
         items = payload
     else:
         return []
-    return [
-        float(x["fare_inr"])
-        for x in items
-        if isinstance(x, dict) and "fare_inr" in x
-    ]
+    return [float(x["fare_inr"]) for x in items if isinstance(x, dict) and "fare_inr" in x]

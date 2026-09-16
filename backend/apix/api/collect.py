@@ -1,4 +1,5 @@
-﻿"""Real-time collection progress via Server-Sent Events."""
+"""Real-time collection progress via Server-Sent Events."""
+
 from __future__ import annotations
 
 import asyncio
@@ -23,7 +24,8 @@ LOG = logging.getLogger("apix.api.collect")
 
 router = APIRouter(prefix="/api/v1/collect", tags=["collect"])
 
-JOBS: dict[str, "asyncio.Queue[ProgressEvent]"] = {}
+JOBS: dict[str, asyncio.Queue[ProgressEvent]] = {}
+_BACKGROUND_TASKS: set[asyncio.Task[None]] = set()
 
 DEFAULT_ROUTES = [
     {"label": "DEL-BOM", "origin_iata": "DEL", "destination_iata": "BOM"},
@@ -37,9 +39,11 @@ DEFAULT_ROUTES = [
 @router.post("/start")
 async def start_collection() -> dict:
     job_id = uuid.uuid4().hex[:12]
-    queue: "asyncio.Queue[ProgressEvent]" = asyncio.Queue()
+    queue: asyncio.Queue[ProgressEvent] = asyncio.Queue()
     JOBS[job_id] = queue
-    asyncio.create_task(_run(job_id, DEFAULT_ROUTES, SOURCES, queue))
+    _task = asyncio.create_task(_run(job_id, DEFAULT_ROUTES, SOURCES, queue))
+    _BACKGROUND_TASKS.add(_task)
+    _task.add_done_callback(_BACKGROUND_TASKS.discard)
     return {"job_id": job_id, "routes": len(DEFAULT_ROUTES), "sources": len(SOURCES)}
 
 
@@ -48,15 +52,27 @@ async def _run(job_id, routes, sources, queue) -> None:
         await run_collection(job_id, routes, sources, progress_queue=queue)
     except Exception as e:
         LOG.exception("collection %s failed", job_id)
-        await queue.put(ProgressEvent(
-            job_id=job_id, route="", tier="", status="error",
-            detail=str(e)[:160], elapsed_ms=0,
-        ))
+        await queue.put(
+            ProgressEvent(
+                job_id=job_id,
+                route="",
+                tier="",
+                status="error",
+                detail=str(e)[:160],
+                elapsed_ms=0,
+            )
+        )
     finally:
-        await queue.put(ProgressEvent(
-            job_id=job_id, route="", tier="", status="__end__",
-            detail="", elapsed_ms=0,
-        ))
+        await queue.put(
+            ProgressEvent(
+                job_id=job_id,
+                route="",
+                tier="",
+                status="__end__",
+                detail="",
+                elapsed_ms=0,
+            )
+        )
 
 
 @router.get("/stream/{job_id}")
@@ -73,13 +89,15 @@ async def stream_progress(job_id: str):
                 break
             yield {
                 "event": "progress",
-                "data": json.dumps({
-                    "route": event.route,
-                    "tier": event.tier,
-                    "status": event.status,
-                    "detail": event.detail,
-                    "elapsed_ms": event.elapsed_ms,
-                }),
+                "data": json.dumps(
+                    {
+                        "route": event.route,
+                        "tier": event.tier,
+                        "status": event.status,
+                        "detail": event.detail,
+                        "elapsed_ms": event.elapsed_ms,
+                    }
+                ),
             }
 
     return EventSourceResponse(event_gen())
@@ -114,6 +132,7 @@ async def pipeline_diagnose() -> dict:
 async def db_state() -> dict:
     """Counts in each pipeline table."""
     from sqlalchemy import func, select
+
     from apix.db import get_sessionmaker
     from apix.models import CleanPrice, FareQuote, IndexPoint, Route, Source
 

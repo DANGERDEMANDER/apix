@@ -1,10 +1,12 @@
-﻿"""MakeMyTrip scraper — httpx + Selectolax.
+"""MakeMyTrip scraper — httpx + Selectolax.
 
 Adapted from the open-source approach used in andrew-geeks/MakeMyTrip-scraper.
 MakeMyTrip is a React SPA, so we try the mobile endpoint first.
 """
+
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import Any
 
@@ -19,8 +21,9 @@ async def search_fares(
     max_results: int = 5,
 ) -> list[dict]:
     from datetime import date, timedelta
-    from selectolax.parser import HTMLParser
+
     import httpx
+    from selectolax.parser import HTMLParser
 
     if not departure_date:
         departure_date = (date.today() + timedelta(days=30)).isoformat()
@@ -54,10 +57,8 @@ async def search_fares(
         if "\u20b9" in text:
             digits = "".join(ch for ch in text if ch.isdigit())
             if digits:
-                try:
+                with contextlib.suppress(ValueError):
                     fares.append(float(digits))
-                except ValueError:
-                    pass
 
     fares = sorted(set(fares))[:max_results]
     return [

@@ -1,9 +1,10 @@
-﻿"""Load reference.csv into the quotes table.
+"""Load reference.csv into the quotes table.
 
 Uses SQLAlchemy introspection so it adapts to whatever column names the
 FareQuote model actually uses. On failure it prints the real columns so
 you know exactly what to align.
 """
+
 from __future__ import annotations
 
 import csv
@@ -13,7 +14,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import inspect as sa_inspect, select
+from sqlalchemy import inspect as sa_inspect
+from sqlalchemy import select
 
 LOG = logging.getLogger("apix.pipeline.loader")
 
@@ -50,7 +52,9 @@ async def load_csv_to_db(csv_path: Path) -> dict:
 
     if not csv_path.exists():
         return {
-            "loaded": 0, "skipped": 0, "reason": "csv not found",
+            "loaded": 0,
+            "skipped": 0,
+            "reason": "csv not found",
             "farequote_columns": sorted(fq_cols),
         }
 
@@ -69,12 +73,14 @@ async def load_csv_to_db(csv_path: Path) -> dict:
 
     if not route_key:
         return {
-            "loaded": 0, "skipped": len(rows),
+            "loaded": 0,
+            "skipped": len(rows),
             "reason": f"Route model has no label/code column. columns={sorted(rt_cols)}",
         }
     if not source_key:
         return {
-            "loaded": 0, "skipped": len(rows),
+            "loaded": 0,
+            "skipped": len(rows),
             "reason": f"Source model has no name/slug column. columns={sorted(src_cols)}",
         }
 
@@ -130,9 +136,7 @@ async def load_csv_to_db(csv_path: Path) -> dict:
             captured_raw = _pick(raw, ["captured_at", "observed_at"])
             if captured_raw:
                 try:
-                    captured = datetime.fromisoformat(
-                        str(captured_raw).replace("Z", "+00:00")
-                    )
+                    captured = datetime.fromisoformat(str(captured_raw).replace("Z", "+00:00"))
                 except ValueError:
                     captured = datetime.now(timezone.utc)
             else:

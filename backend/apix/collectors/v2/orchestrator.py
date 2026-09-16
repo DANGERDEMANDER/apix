@@ -1,9 +1,10 @@
-﻿"""Orchestrates a collection run: spawns workers, emits events, writes CSV.
+"""Orchestrates a collection run: spawns workers, emits events, writes CSV.
 
 Writes each worker's rows to reference.csv as soon as that worker
 finishes, so the UI sees the file grow during the run instead of
 waiting for every route to complete.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -14,9 +15,6 @@ import tempfile
 from dataclasses import asdict, dataclass
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any
-
-from .captcha import detect_captcha
 
 LOG = logging.getLogger("apix.collector.orchestrator")
 
@@ -54,6 +52,7 @@ class QuoteRow:
 
 # --- Atomic CSV writer -----------------------------------------
 
+
 def _read_existing() -> list[dict]:
     if not REFERENCE_CSV.exists():
         return []
@@ -63,9 +62,7 @@ def _read_existing() -> list[dict]:
 
 def _write_atomic(rows: list[dict]) -> None:
     REFERENCE_CSV.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(
-        prefix=".reference.", suffix=".csv", dir=str(REFERENCE_CSV.parent)
-    )
+    fd, tmp = tempfile.mkstemp(prefix=".reference.", suffix=".csv", dir=str(REFERENCE_CSV.parent))
     os.close(fd)
     tmp_path = Path(tmp)
     try:
@@ -105,11 +102,12 @@ async def append_quotes(new_rows: list[QuoteRow]) -> None:
 
 # --- Worker --------------------------------------------
 
+
 async def _worker_api(
     job_id: str,
     route: dict,
     source: dict,
-    queue: "asyncio.Queue[ProgressEvent]",
+    queue: asyncio.Queue[ProgressEvent],
     semaphore: asyncio.Semaphore,
 ) -> list[QuoteRow]:
     label = route["label"]
@@ -117,10 +115,16 @@ async def _worker_api(
     started = asyncio.get_event_loop().time()
 
     async def emit(status: str, detail: str) -> None:
-        await queue.put(ProgressEvent(
-            job_id, label, tier, status, detail,
-            int((asyncio.get_event_loop().time() - started) * 1000),
-        ))
+        await queue.put(
+            ProgressEvent(
+                job_id,
+                label,
+                tier,
+                status,
+                detail,
+                int((asyncio.get_event_loop().time() - started) * 1000),
+            )
+        )
 
     await emit("start", f"{source['name']} \u00b7 queued")
 
@@ -128,7 +132,8 @@ async def _worker_api(
 
     async def call_search() -> list[dict]:
         return await source["search"](
-            route["origin_iata"], route["destination_iata"],
+            route["origin_iata"],
+            route["destination_iata"],
         )
 
     try:
@@ -163,7 +168,7 @@ async def _worker_api(
 
         return rows
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         await emit("error", f"timeout after {SOURCE_TIMEOUT_S}s")
         return []
     except Exception as e:
@@ -173,12 +178,13 @@ async def _worker_api(
 
 # --- Main entry -----------------------------------------
 
+
 async def run_collection(
     job_id: str,
     routes: list[dict],
     sources: list[dict],
     *,
-    progress_queue: "asyncio.Queue[ProgressEvent]",
+    progress_queue: asyncio.Queue[ProgressEvent],
 ) -> list[QuoteRow]:
     # Fresh semaphore per run — avoids "bound to a dead loop" after reload.
     semaphore = asyncio.Semaphore(2)
@@ -197,4 +203,3 @@ async def run_collection(
 
     LOG.info("collection %s complete: %d quotes total", job_id, len(all_rows))
     return all_rows
-

@@ -1,13 +1,14 @@
-﻿"""Standalone Google Flights worker. Run as a subprocess.
+"""Standalone Google Flights worker. Run as a subprocess.
 
 This isolates Playwright from uvicorn's event loop, which on Windows
 uses a SelectorEventLoop that cannot spawn subprocesses.
 """
+
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
-from datetime import date, timedelta
 
 from playwright.sync_api import sync_playwright
 from selectolax.parser import HTMLParser
@@ -47,10 +48,8 @@ def scrape(origin: str, destination: str, departure_date: str, max_results: int)
         if "\u20b9" in text or "INR" in text:
             digits = "".join(ch for ch in text if ch.isdigit())
             if digits:
-                try:
+                with contextlib.suppress(ValueError):
                     fares.append(float(digits))
-                except ValueError:
-                    pass
 
     fares = sorted(set(fares))[:max_results]
     return [

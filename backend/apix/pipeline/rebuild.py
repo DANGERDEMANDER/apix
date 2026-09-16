@@ -1,9 +1,10 @@
-﻿"""End-to-end rebuild: CSV -> quotes -> clean -> index_points.
+"""End-to-end rebuild: CSV -> quotes -> clean -> index_points.
 
 Introspects models at runtime so it works with whatever column names
 the project actually has. Fills required columns with sensible
 defaults so route/source auto-creation never fails on NOT NULL.
 """
+
 from __future__ import annotations
 
 import csv
@@ -11,25 +12,30 @@ import importlib
 import inspect as pyinspect
 import logging
 import os
+from collections.abc import Callable
 from datetime import date as date_cls
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from sqlalchemy import func, select
 
 LOG = logging.getLogger("apix.pipeline.rebuild")
 
-REFERENCE_CSV = Path(os.environ.get(
-    "APIX_REFERENCE_CSV",
-    str(Path(__file__).resolve().parents[3] / "reference.csv"),
-))
+REFERENCE_CSV = Path(
+    os.environ.get(
+        "APIX_REFERENCE_CSV",
+        str(Path(__file__).resolve().parents[3] / "reference.csv"),
+    )
+)
 
 
 # ─── Introspection helpers ──────────────────────────────────────
 
+
 def _cols(model: Any) -> dict[str, Any]:
     from sqlalchemy import inspect as sa_inspect
+
     return {c.key: c for c in sa_inspect(model).columns}
 
 
@@ -104,6 +110,7 @@ async def _count(session: Any, model: Any) -> int:
 
 # ─── Step 1: ensure routes exist ────────────────────────────────
 
+
 async def _ensure_routes(session: Any, csv_rows: list[dict]) -> dict:
     from apix.models import Route
 
@@ -130,8 +137,7 @@ async def _ensure_routes(session: Any, csv_rows: list[dict]) -> dict:
         }
 
     existing = {
-        getattr(rt, route_col, None)
-        for rt in (await session.execute(select(Route))).scalars()
+        getattr(rt, route_col, None) for rt in (await session.execute(select(Route))).scalars()
     }
     existing.discard(None)
 
@@ -161,6 +167,7 @@ async def _ensure_routes(session: Any, csv_rows: list[dict]) -> dict:
 
 # ─── Step 2: ensure sources exist ───────────────────────────────
 
+
 async def _ensure_sources(session: Any, csv_rows: list[dict]) -> dict:
     from apix.models import Source
 
@@ -183,21 +190,21 @@ async def _ensure_sources(session: Any, csv_rows: list[dict]) -> dict:
             if not src:
                 continue
             lower = src.lower()
-            if "google" in lower and "scrape" in enum_values:
+            if (
+                "google" in lower
+                and "scrape" in enum_values
+                or "makemytrip" in lower
+                and "scrape" in enum_values
+            ):
                 kind_value_for[src] = "scrape"
-            elif "makemytrip" in lower and "scrape" in enum_values:
-                kind_value_for[src] = "scrape"
-            elif "amadeus" in lower and "api" in enum_values:
-                kind_value_for[src] = "api"
-            elif "api" in enum_values:
+            elif "amadeus" in lower and "api" in enum_values or "api" in enum_values:
                 kind_value_for[src] = "api"
             elif enum_values:
                 kind_value_for[src] = enum_values[0]
 
     needed = {(r.get("source") or "").strip() for r in csv_rows if r.get("source")}
     existing = {
-        getattr(s, name_col, None)
-        for s in (await session.execute(select(Source))).scalars()
+        getattr(s, name_col, None) for s in (await session.execute(select(Source))).scalars()
     }
     existing.discard(None)
 
@@ -227,6 +234,7 @@ async def _ensure_sources(session: Any, csv_rows: list[dict]) -> dict:
 
 # ─── Step 3: load CSV into quotes ───────────────────────────────
 
+
 async def _load_quotes(session: Any, csv_rows: list[dict]) -> dict:
     from apix.models import FareQuote, Route, Source
 
@@ -253,8 +261,12 @@ async def _load_quotes(session: Any, csv_rows: list[dict]) -> dict:
     if not price_col:
         return {"ok": False, "reason": f"no price column; fq_cols={list(fq_cols)}"}
 
-    route_map = {getattr(rt, route_col, None): rt for rt in (await session.execute(select(Route))).scalars()}
-    source_map = {getattr(s, src_col, None): s for s in (await session.execute(select(Source))).scalars()}
+    route_map = {
+        getattr(rt, route_col, None): rt for rt in (await session.execute(select(Route))).scalars()
+    }
+    source_map = {
+        getattr(s, src_col, None): s for s in (await session.execute(select(Source))).scalars()
+    }
 
     inserted = 0
     skipped_reasons: dict[str, int] = {}
@@ -300,13 +312,17 @@ async def _load_quotes(session: Any, csv_rows: list[dict]) -> dict:
         payload[price_col] = fare
         if date_col:
             try:
-                payload[date_col] = date_cls.fromisoformat(r.get("date") or date_cls.today().isoformat())
+                payload[date_col] = date_cls.fromisoformat(
+                    r.get("date") or date_cls.today().isoformat()
+                )
             except ValueError:
                 payload[date_col] = date_cls.today()
         if ts_col:
             try:
                 payload[ts_col] = datetime.fromisoformat(
-                    (r.get("captured_at") or datetime.now(timezone.utc).isoformat()).replace("Z", "+00:00")
+                    (r.get("captured_at") or datetime.now(timezone.utc).isoformat()).replace(
+                        "Z", "+00:00"
+                    )
                 )
             except ValueError:
                 payload[ts_col] = datetime.now(timezone.utc)
@@ -329,7 +345,10 @@ async def _load_quotes(session: Any, csv_rows: list[dict]) -> dict:
 
 # ─── Step 4: run cleaning / index stages ────────────────────────
 
-async def _run_stage(stage_name: str, module_names: list[str], entries: list[str], session: Any) -> dict:
+
+async def _run_stage(
+    stage_name: str, module_names: list[str], entries: list[str], session: Any
+) -> dict:
     entry: Callable[..., Any] | None = None
     via = ""
 
@@ -366,12 +385,23 @@ async def _run_stage(stage_name: str, module_names: list[str], entries: list[str
             last_err = e
             continue
         except Exception as e:
-            return {"ok": False, "via": via, "signature": params, "error": f"{type(e).__name__}: {e}"}
+            return {
+                "ok": False,
+                "via": via,
+                "signature": params,
+                "error": f"{type(e).__name__}: {e}",
+            }
 
-    return {"ok": False, "via": via, "signature": params, "error": f"all call shapes failed: {last_err}"}
+    return {
+        "ok": False,
+        "via": via,
+        "signature": params,
+        "error": f"all call shapes failed: {last_err}",
+    }
 
 
 # ─── Main entry ─────────────────────────────────────────────────
+
 
 async def rebuild_all() -> dict:
     from apix.db import get_sessionmaker
@@ -428,13 +458,13 @@ async def _counts(session_maker) -> dict:
     import apix.models as m
 
     models = {
-        "routes":        "Route",
-        "sources":       "Source",
-        "quotes":        "FareQuote",
-        "clean_fares":   "CleanFare",
-        "daily_prices":  "DailyRoutePrice",
-        "index_values":  "IndexValue",
-        "dgca_refs":     "DgcaReference",
+        "routes": "Route",
+        "sources": "Source",
+        "quotes": "FareQuote",
+        "clean_fares": "CleanFare",
+        "daily_prices": "DailyRoutePrice",
+        "index_values": "IndexValue",
+        "dgca_refs": "DgcaReference",
     }
 
     out: dict[str, Any] = {}
@@ -449,5 +479,3 @@ async def _counts(session_maker) -> dict:
             except Exception as e:
                 out[label] = f"error: {type(e).__name__}: {e}"
     return out
-
-

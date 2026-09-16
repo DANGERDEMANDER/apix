@@ -1,15 +1,15 @@
-﻿"""Captcha detection and bypass.
+"""Captcha detection and bypass.
 
 Passive: Patchright's stealth handles most cases without solving anything.
 Active: local OCR for image grids, or a paid solver API if enabled.
 """
+
 from __future__ import annotations
 
 import logging
 import os
 import re
 from io import BytesIO
-from typing import Optional
 
 LOG = logging.getLogger("apix.collector.captcha")
 
@@ -24,7 +24,7 @@ CAPTCHA_MARKERS = [
 ]
 
 
-def detect_captcha(html: str) -> Optional[str]:
+def detect_captcha(html: str) -> str | None:
     """Return the captcha vendor marker if the body looks like a challenge."""
     low = html.lower()
     for marker in CAPTCHA_MARKERS:
@@ -33,13 +33,13 @@ def detect_captcha(html: str) -> Optional[str]:
     return None
 
 
-async def solve_with_ocr(image_bytes: bytes) -> Optional[str]:
+async def solve_with_ocr(image_bytes: bytes) -> str | None:
     """Local OCR for simple text captchas. Free, no API key."""
     try:
         import cv2
         import numpy as np
-        from PIL import Image
         import pytesseract
+        from PIL import Image
     except ImportError:
         LOG.warning("ocr dependencies missing; skipping solve")
         return None
@@ -51,7 +51,7 @@ async def solve_with_ocr(image_bytes: bytes) -> Optional[str]:
     return text or None
 
 
-async def solve_with_2captcha(sitekey: str, pageurl: str) -> Optional[str]:
+async def solve_with_2captcha(sitekey: str, pageurl: str) -> str | None:
     """Paid solver fallback. Only used if TWOCAPTCHA_KEY is set."""
     api_key = os.environ.get("TWOCAPTCHA_KEY")
     if not api_key:
