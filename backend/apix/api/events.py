@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -56,10 +57,8 @@ class RunChannel:
 
     async def close(self) -> None:
         self.finished = True
-        try:
+        with contextlib.suppress(asyncio.QueueFull):
             self.queue.put_nowait(None)
-        except asyncio.QueueFull:
-            pass
 
 
 _channels: dict[str, RunChannel] = {}
