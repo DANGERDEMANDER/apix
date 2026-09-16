@@ -70,6 +70,8 @@ function ChartBlock({ points }: { points: IndexPoint[] }) {
           alignItems: "baseline",
           justifyContent: "space-between",
           marginBottom: "var(--sp-4)",
+          gap: "var(--sp-4)",
+          flexWrap: "wrap",
         }}
       >
         <p className="card-title" style={{ margin: 0 }}>
@@ -83,6 +85,12 @@ function ChartBlock({ points }: { points: IndexPoint[] }) {
           </span>
         )}
       </div>
+
+      <p className="chart-lede">
+        Daily readings in bright. A{" "}
+        <strong>7-day average in dashed grey</strong> to cut the noise. Hover
+        any point to see the day&rsquo;s coverage.
+      </p>
 
       <div className="chart-wrap">
         <ResponsiveContainer width="100%" height="100%">
@@ -103,11 +111,7 @@ function ChartBlock({ points }: { points: IndexPoint[] }) {
               </linearGradient>
             </defs>
 
-            <CartesianGrid
-              stroke="var(--line)"
-              strokeDasharray="2 6"
-              vertical={false}
-            />
+            <CartesianGrid stroke="var(--line)" strokeDasharray="2 6" vertical={false} />
             <XAxis
               dataKey="date"
               tick={{ fontSize: 11, fill: "var(--muted)" }}
@@ -217,10 +221,18 @@ export default function IndexOverview() {
   const heroValue =
     latest.data?.value != null ? Number(latest.data.value) : null;
   const coverage = latest.data?.weight_covered ?? null;
+  const above = heroValue !== null && heroValue > 100;
 
   return (
     <>
+      <span className="kicker">● Live · Index</span>
       <h2>Index Overview</h2>
+      <p className="page-sub">
+        The pulse of Indian air travel, in{" "}
+        <span className="hl">one number</span>. Ten high-traffic routes.
+        Weighted by real passenger volume. Rebased to a fixed reference.
+        Published every day — nothing hidden.
+      </p>
 
       {latest.isError ? (
         <div className="error-banner">
@@ -232,7 +244,7 @@ export default function IndexOverview() {
         <p className="card-title">Current APIX · Base fare</p>
         <div className="hero-row">
           {latest.isLoading ? (
-            <span className="skeleton" style={{ width: 240, height: 72 }} />
+            <span className="skeleton" style={{ width: 300, height: 88 }} />
           ) : (
             <AnimatedNumber
               value={heroValue}
@@ -253,17 +265,34 @@ export default function IndexOverview() {
             </span>
           )}
         </div>
+
+        <p className="hero-desc">
+          {heroValue !== null ? (
+            <>
+              The basket sits{" "}
+              <strong>
+                {above ? "above" : "below"} the 100 baseline
+              </strong>
+              . That&rsquo;s the swing between the first and last published
+              days in the visible window, shown as the chip above.
+            </>
+          ) : (
+            "No published reading yet — the collector hasn't run."
+          )}
+        </p>
+
         <div
           style={{
             fontSize: "var(--fs-xs)",
             color: "var(--muted)",
-            marginTop: "var(--sp-3)",
+            marginTop: "var(--sp-4)",
             fontFamily: "var(--font-mono)",
+            letterSpacing: "0.04em",
           }}
         >
-          {latest.data?.as_of ? `as of ${latest.data.as_of}` : "no published value"}
+          {latest.data?.as_of ? `AS OF ${latest.data.as_of}` : "NO PUBLISHED VALUE"}
           {latest.data?.routes_included != null
-            ? ` · ${latest.data.routes_included} routes`
+            ? ` · ${latest.data.routes_included} ROUTES`
             : ""}
         </div>
       </div>
@@ -283,6 +312,11 @@ export default function IndexOverview() {
 
       <div className="card">
         <p className="card-title">Routes in basket</p>
+        <p className="chart-lede">
+          Bigger routes pull harder.{" "}
+          <strong>Weight equals share of passenger volume</strong> — so DEL-BOM
+          moves the index roughly four times as much as BLR-CCU.
+        </p>
         {routes.isLoading ? (
           <span className="skeleton" style={{ width: "100%", height: 80 }} />
         ) : routes.isError ? (
@@ -341,12 +375,15 @@ export default function IndexOverview() {
           color: "var(--muted)",
           marginTop: "var(--sp-5)",
           fontFamily: "var(--font-mono)",
+          letterSpacing: "0.04em",
         }}
       >
         {series.data?.base_period
-          ? `Base period: ${series.data.base_period}`
+          ? `BASE PERIOD · ${series.data.base_period}`
           : ""}
-        {series.data?.meta?.mode ? ` · data mode: ${series.data.meta.mode}` : ""}
+        {series.data?.meta?.mode
+          ? ` · DATA MODE · ${series.data.meta.mode.toUpperCase()}`
+          : ""}
       </div>
     </>
   );

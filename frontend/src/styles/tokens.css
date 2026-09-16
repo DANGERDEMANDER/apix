@@ -1,5 +1,5 @@
 ﻿/* ─────────────────────────────────────────────
-   APix design tokens — aurora edition
+   APix design tokens — aurora edition v2
    ───────────────────────────────────────────── */
 
 :root,
@@ -22,6 +22,8 @@
   --accent: #8B6BFF;
   --accent-2: #29D9EE;
   --accent-3: #FF7AC8;
+  --accent-gold: #FFC978;
+  --accent-mint: #7BFFD9;
   --lime: #C4FF4A;
 
   --up: #FF5C7A;
@@ -32,7 +34,13 @@
   --grad-hero: linear-gradient(135deg, #8B6BFF 0%, #29D9EE 48%, #FF7AC8 100%);
   --grad-hero-soft: linear-gradient(135deg, rgba(139,107,255,0.28), rgba(41,217,238,0.22), rgba(255,122,200,0.22));
   --grad-line: linear-gradient(90deg, #8B6BFF, #29D9EE 60%, #FF7AC8);
+  --grad-gold: linear-gradient(135deg, #FFC978, #FF7AC8);
+  --grad-mint: linear-gradient(135deg, #7BFFD9, #29D9EE);
   --grad-card: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+  --grad-sidebar: linear-gradient(180deg,
+    rgba(139,107,255,0.06) 0%,
+    rgba(41,217,238,0.03) 45%,
+    transparent 80%);
 
   --shadow-card: 0 1px 0 rgba(255,255,255,0.05) inset,
                  0 20px 40px -24px rgba(0,0,0,0.8);
@@ -42,6 +50,7 @@
   --glow-accent: 0 0 32px rgba(139,107,255,0.35);
   --glow-down: 0 0 24px rgba(43,230,165,0.35);
   --glow-up: 0 0 24px rgba(255,92,122,0.35);
+  --glow-gold: 0 0 24px rgba(255,201,120,0.35);
 
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Consolas, monospace;
@@ -54,14 +63,8 @@
   --fs-2xl: 32px;
   --fs-hero: 76px;
 
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 24px;
-  --sp-6: 32px;
-  --sp-7: 48px;
-  --sp-8: 64px;
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
 
   --radius-sm: 10px;
   --radius: 18px;
@@ -69,6 +72,7 @@
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --dur: 320ms;
   --dur-slow: 600ms;
 }
@@ -84,6 +88,8 @@
   --accent-2: #5A9FBF;
   --accent-3: #9A8DBF;
   --grad-hero: linear-gradient(135deg, #7A85A8, #5A9FBF 50%, #9A8DBF);
+  --grad-gold: linear-gradient(135deg, #9A8DBF, #7A85A8);
+  --grad-mint: linear-gradient(135deg, #5A9FBF, #7A85A8);
 }
 
 :root[data-theme="cyber"] {
@@ -100,8 +106,12 @@
   --accent: #00E5D0;
   --accent-2: #22D3EE;
   --accent-3: #C4FF4A;
+  --accent-gold: #FFD166;
+  --accent-mint: #7BFFD9;
   --up: #FF3D71;
   --down: #3DFFAA;
   --grad-hero: linear-gradient(135deg, #00E5D0, #22D3EE 55%, #C4FF4A);
+  --grad-gold: linear-gradient(135deg, #FFD166, #C4FF4A);
+  --grad-mint: linear-gradient(135deg, #7BFFD9, #00E5D0);
   --glow-accent: 0 0 36px rgba(0,229,208,0.45);
 }
