@@ -49,51 +49,79 @@ const TIERS = [
   {
     tier: "Tier 1",
     name: "HTTP + JSON",
-    tone: "kpi-mint" as const,
+    tone: "tier-mint",
     speed: "~50 ms",
     body:
-      "Direct API calls where the source exposes a JSON endpoint. Fastest, cleanest, cheapest. httpx with connection pooling.",
+      "Direct API calls where the source exposes a JSON endpoint. Fastest, cleanest, cheapest.",
     tools: ["httpx", "orjson"],
   },
   {
     tier: "Tier 2",
     name: "HTML parsing",
-    tone: "kpi-cyan" as const,
+    tone: "tier-cyan",
     speed: "~400 ms",
     body:
-      "Server-rendered pages parsed with a fast HTML selector engine. Handles sites that don't ship a public API but render prices in the initial payload.",
+      "Server-rendered pages parsed with a fast HTML selector engine. Handles sites without a public API but with prices in the initial payload.",
     tools: ["httpx", "selectolax"],
   },
   {
     tier: "Tier 3",
     name: "Browser automation",
-    tone: "kpi-gold" as const,
+    tone: "tier-gold",
     speed: "3–5 s",
     body:
-      "Headless Chromium via Playwright. Renders the page, waits for fare widgets to appear, reads the DOM. Last resort for JS-heavy sites.",
+      "Headless Chromium via Playwright. Renders the page, waits for fare widgets, reads the DOM. Last resort for JS-heavy sites.",
     tools: ["playwright", "chromium"],
   },
 ];
 
-const STACK = [
-  { name: "FastAPI", role: "HTTP API framework", cat: "Backend" },
-  { name: "SQLAlchemy 2", role: "Async ORM", cat: "Backend" },
-  { name: "asyncpg", role: "Async Postgres driver", cat: "Backend" },
-  { name: "Alembic", role: "Schema migrations", cat: "Backend" },
-  { name: "Pydantic", role: "Validation + schemas", cat: "Backend" },
-  { name: "Playwright", role: "Headless browser", cat: "Collector" },
-  { name: "httpx", role: "Async HTTP client", cat: "Collector" },
-  { name: "selectolax", role: "Fast HTML parsing", cat: "Collector" },
-  { name: "uv", role: "Package manager", cat: "Tooling" },
-  { name: "ruff", role: "Linter + formatter", cat: "Tooling" },
-  { name: "mypy", role: "Static types", cat: "Tooling" },
-  { name: "pytest", role: "Test runner", cat: "Tooling" },
-  { name: "React 18", role: "UI framework", cat: "Frontend" },
-  { name: "Vite", role: "Build tool", cat: "Frontend" },
-  { name: "TanStack Query", role: "Server state", cat: "Frontend" },
-  { name: "Recharts", role: "Charts", cat: "Frontend" },
-  { name: "Framer Motion", role: "Animation", cat: "Frontend" },
-  { name: "PostgreSQL 16", role: "Primary database", cat: "Data" },
+const STACK_GROUPS = [
+  {
+    cat: "Backend",
+    tone: "stack-violet",
+    items: [
+      { name: "FastAPI", role: "HTTP API framework" },
+      { name: "SQLAlchemy 2", role: "Async ORM" },
+      { name: "asyncpg", role: "Async Postgres driver" },
+      { name: "Alembic", role: "Schema migrations" },
+      { name: "Pydantic", role: "Validation + schemas" },
+    ],
+  },
+  {
+    cat: "Collector",
+    tone: "stack-cyan",
+    items: [
+      { name: "Playwright", role: "Headless browser" },
+      { name: "httpx", role: "Async HTTP client" },
+      { name: "selectolax", role: "Fast HTML parsing" },
+    ],
+  },
+  {
+    cat: "Data",
+    tone: "stack-mint",
+    items: [{ name: "PostgreSQL 16", role: "Primary database" }],
+  },
+  {
+    cat: "Frontend",
+    tone: "stack-pink",
+    items: [
+      { name: "React 18", role: "UI framework" },
+      { name: "Vite", role: "Build tool" },
+      { name: "TanStack Query", role: "Server state" },
+      { name: "Recharts", role: "Charts" },
+      { name: "Framer Motion", role: "Animation" },
+    ],
+  },
+  {
+    cat: "Tooling",
+    tone: "stack-gold",
+    items: [
+      { name: "uv", role: "Package manager" },
+      { name: "ruff", role: "Linter + formatter" },
+      { name: "mypy", role: "Static types" },
+      { name: "pytest", role: "Test runner" },
+    ],
+  },
 ];
 
 const LIMITS = [
@@ -140,12 +168,26 @@ export default function Working() {
         <div className="pipeline">
           {PIPELINE.map((s, i) => (
             <div key={s.n} className="pipeline-cell">
-              <TiltCard className="stage" intensity={6}>
-                <div className="stage-n">{s.n}</div>
-                <div className="stage-emoji" aria-hidden>{s.emoji}</div>
-                <div className="stage-name">{s.name}</div>
-                <div className="stage-body">{s.body}</div>
-              </TiltCard>
+              <motion.div
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{
+                  duration: 0.6,
+                  delay: i * 0.10,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                style={{ flex: 1, display: "flex" }}
+              >
+                <TiltCard className="stage" intensity={6}>
+                  <div className="stage-n">{s.n}</div>
+                  <div className="stage-emoji" aria-hidden>
+                    {s.emoji}
+                  </div>
+                  <div className="stage-name">{s.name}</div>
+                  <div className="stage-body">{s.body}</div>
+                </TiltCard>
+              </motion.div>
               {i < PIPELINE.length - 1 && (
                 <div className="stage-arrow" aria-hidden>
                   <span />
@@ -167,18 +209,22 @@ export default function Working() {
         <p className="card-title">The collector — three-tier escalation</p>
         <p className="chart-lede">
           Not every source needs a full browser. We try the cheapest
-          technique first, escalate only on failure. This keeps the
-          pipeline fast and gentle on the sources we read.
+          technique first, escalate only on failure. Fast for us, gentle on
+          the sources we read.
         </p>
 
         <div className="tier-list">
           {TIERS.map((t, i) => (
             <motion.div
               key={t.tier}
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.6, delay: i * 0.12 }}
+              transition={{
+                duration: 0.6,
+                delay: i * 0.14,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
               <TiltCard className={`tier ${t.tone}`} intensity={5}>
                 <div className="tier-head">
@@ -209,7 +255,7 @@ export default function Working() {
         </div>
       </motion.div>
 
-      {/* ─── Open source stack ────────────────────────────── */}
+      {/* ─── Open source stack — grouped by category ─────── */}
       <motion.div
         className="card"
         {...fadeUp}
@@ -221,19 +267,40 @@ export default function Working() {
           proprietary services hold the pipeline hostage.
         </p>
 
-        <div className="stack-grid">
-          {STACK.map((s, i) => (
+        <div className="stack-groups">
+          {STACK_GROUPS.map((group, gi) => (
             <motion.div
-              key={s.name}
-              className="stack-item"
-              initial={{ opacity: 0, y: 14 }}
+              key={group.cat}
+              className="stack-group"
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.45, delay: i * 0.025 }}
+              transition={{ duration: 0.5, delay: gi * 0.08 }}
             >
-              <div className="stack-cat">{s.cat}</div>
-              <div className="stack-name">{s.name}</div>
-              <div className="stack-role">{s.role}</div>
+              <div className={`stack-group-head ${group.tone}`}>
+                <span className="stack-group-name">{group.cat}</span>
+                <span className="stack-group-count">
+                  {group.items.length}
+                </span>
+              </div>
+              <div className="stack-group-body">
+                {group.items.map((s, i) => (
+                  <motion.div
+                    key={s.name}
+                    className="stack-item"
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{
+                      duration: 0.4,
+                      delay: gi * 0.08 + i * 0.04,
+                    }}
+                  >
+                    <div className="stack-name">{s.name}</div>
+                    <div className="stack-role">{s.role}</div>
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -247,7 +314,13 @@ export default function Working() {
       >
         <p className="card-title">Transparency</p>
         <div className="trans-grid">
-          <div className="trans-item">
+          <motion.div
+            className="trans-item"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5 }}
+          >
             <div className="trans-head">Coverage</div>
             <p className="trans-body">
               Every index value carries a{" "}
@@ -256,8 +329,14 @@ export default function Working() {
               their full weight, coverage reads 0.94. It&rsquo;s shown on
               every published point.
             </p>
-          </div>
-          <div className="trans-item">
+          </motion.div>
+          <motion.div
+            className="trans-item"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5, delay: 0.06 }}
+          >
             <div className="trans-head">Withholding</div>
             <p className="trans-body">
               If coverage drops below the threshold, the day is marked{" "}
@@ -265,16 +344,28 @@ export default function Working() {
               dashboard shows a gap. We never interpolate a day we
               can&rsquo;t measure.
             </p>
-          </div>
-          <div className="trans-item">
+          </motion.div>
+          <motion.div
+            className="trans-item"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5, delay: 0.12 }}
+          >
             <div className="trans-head">Reproducibility</div>
             <p className="trans-body">
               Cleaning rules, weight source, and aggregation formula live in{" "}
-              <strong>METHODOLOGY.md</strong>. Anyone can recompute today&rsquo;s
-              number from the raw quotes without asking us.
+              <strong>METHODOLOGY.md</strong>. Anyone can recompute
+              today&rsquo;s number from the raw quotes without asking us.
             </p>
-          </div>
-          <div className="trans-item">
+          </motion.div>
+          <motion.div
+            className="trans-item"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5, delay: 0.18 }}
+          >
             <div className="trans-head">Provenance</div>
             <p className="trans-body">
               Every route carries a{" "}
@@ -283,7 +374,7 @@ export default function Working() {
               <em>dgca-synthetic</em> for placeholders. The dashboard surfaces
               it — no hidden guesses.
             </p>
-          </div>
+          </motion.div>
         </div>
       </motion.div>
 
@@ -301,10 +392,10 @@ export default function Working() {
           {LIMITS.map((l, i) => (
             <motion.li
               key={i}
-              initial={{ opacity: 0, x: -12 }}
+              initial={{ opacity: 0, x: -16 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.4, delay: i * 0.06 }}
+              transition={{ duration: 0.45, delay: i * 0.06 }}
             >
               {l}
             </motion.li>

@@ -1429,3 +1429,978 @@ table tbody tr:nth-child(10) { animation-delay: 400ms; }
   color: var(--accent-gold);
   letter-spacing: 0.06em;
 }
+/* ═════════════════════════════════════════════════════════════
+   Sliding sidebar v5 — collapsible rail with smooth width
+   ═════════════════════════════════════════════════════════════ */
+
+/* Layout: switch from CSS grid to flex for animatable width */
+.layout {
+  display: flex !important;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 280px !important;
+  flex-shrink: 0;
+  transition: width 420ms cubic-bezier(0.22, 1, 0.36, 1),
+              padding 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.layout.collapsed .sidebar {
+  width: 68px !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  transition: padding 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ─── Sidebar top row: brand + collapse button ──────────────── */
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: var(--sp-3);
+  min-height: 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--accent-2);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(41,217,238,0.45));
+}
+
+.sidebar .brand-name {
+  font-size: 22px;
+  margin: 0;
+  background: linear-gradient(90deg,
+    var(--accent) 0%,
+    var(--accent-2) 35%,
+    var(--accent-3) 70%,
+    var(--accent) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmerText 8s linear infinite;
+}
+
+.collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--dur) var(--ease);
+}
+.collapse-btn:hover {
+  background: var(--surface-hi);
+  border-color: var(--line-strong);
+  color: var(--ink);
+  transform: none;
+}
+
+/* ─── Nav icons ─────────────────────────────────────────────── */
+
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: currentColor;
+  transition: color var(--dur) var(--ease);
+}
+
+.nav-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  transition: opacity 200ms var(--ease), max-width 320ms var(--ease);
+}
+
+/* Remove the dot indicator — the icon is the indicator now */
+.sidebar nav a::before {
+  display: none;
+}
+
+/* Active state — glow the icon */
+.sidebar nav a.active .nav-icon {
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px var(--accent));
+}
+
+/* ─── Collapsed state — hide everything but the icons ──────── */
+
+.layout.collapsed .brand-name,
+.layout.collapsed .brand-tag,
+.layout.collapsed .brand-desc,
+.layout.collapsed .live-text,
+.layout.collapsed .sidebar-stats,
+.layout.collapsed .nav-label,
+.layout.collapsed .nav-arrow {
+  display: none;
+}
+
+.layout.collapsed .sidebar-top {
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: var(--sp-4);
+}
+
+.layout.collapsed .brand {
+  justify-content: center;
+  gap: 0;
+}
+
+.layout.collapsed .live-badge {
+  align-self: center;
+  padding: 6px 8px;
+  margin-bottom: var(--sp-4);
+}
+
+.layout.collapsed nav {
+  gap: 6px;
+}
+
+.layout.collapsed nav a {
+  justify-content: center;
+  padding: 11px 0;
+  gap: 0;
+}
+
+.layout.collapsed nav a:hover {
+  transform: translateX(0) scale(1.06);
+}
+
+.layout.collapsed .nav-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* Collapsed theme toggle: stack vertically, small labels */
+.layout.collapsed .theme-toggle {
+  flex-direction: column;
+  gap: 4px;
+  padding-top: var(--sp-3);
+}
+
+.layout.collapsed .theme-toggle button {
+  font-size: 9px;
+  letter-spacing: 0.10em;
+  padding: 5px 2px;
+}
+
+/* Subtle background pulse for the collapse button — draws the eye once */
+.collapse-btn {
+  position: relative;
+}
+.collapse-btn::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  opacity: 0;
+  animation: pulseRing 2.4s ease-out 1.2s 1;
+  pointer-events: none;
+}
+
+@keyframes pulseRing {
+  0%   { opacity: 0;    transform: scale(0.85); }
+  40%  { opacity: 0.55; transform: scale(1); }
+  100% { opacity: 0;    transform: scale(1.2); }
+}
+/* ═════════════════════════════════════════════════════════════
+   Page backgrounds — dynamic per route
+   ═════════════════════════════════════════════════════════════ */
+
+.page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 600ms var(--ease);
+}
+
+/* Kill the old body::before since PageBackground replaces it */
+body::before { display: none !important; }
+body::after  { display: none !important; }
+
+/* ─── Aurora wash (tinted per page) ─────────────────────────── */
+
+.bg-aurora {
+  position: absolute;
+  inset: -30%;
+  filter: blur(6px);
+  animation: aurora 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.page-bg-index .bg-aurora {
+  background:
+    radial-gradient(700px circle at 15% 15%, rgba(139,107,255,0.28), transparent 55%),
+    radial-gradient(800px circle at 85% 10%, rgba(41,217,238,0.20), transparent 55%),
+    radial-gradient(900px circle at 50% 110%, rgba(255,122,200,0.18), transparent 60%);
+}
+
+.page-bg-working .bg-aurora {
+  background:
+    radial-gradient(720px circle at 20% 30%, rgba(41,217,238,0.24), transparent 55%),
+    radial-gradient(820px circle at 80% 75%, rgba(123,255,217,0.18), transparent 55%),
+    radial-gradient(700px circle at 50% 5%, rgba(139,107,255,0.20), transparent 60%);
+  animation-duration: 38s;
+}
+
+.page-bg-backtest .bg-aurora {
+  background:
+    radial-gradient(720px circle at 70% 25%, rgba(255,122,200,0.24), transparent 55%),
+    radial-gradient(820px circle at 25% 80%, rgba(255,201,120,0.20), transparent 55%),
+    radial-gradient(700px circle at 50% 50%, rgba(139,107,255,0.14), transparent 60%);
+  animation-duration: 34s;
+}
+
+/* ─── Grain overlay ─────────────────────────────────────────── */
+
+.bg-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INDEX — arcing flight paths + rising dots
+   ═══════════════════════════════════════════════════════════ */
+
+.bg-arcs {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
+}
+
+.bg-arc {
+  animation: dashFlow 12s linear infinite;
+}
+.bg-arc-1 { animation-duration: 14s; }
+.bg-arc-2 { animation-duration: 18s; animation-direction: reverse; }
+.bg-arc-3 { animation-duration: 22s; }
+
+@keyframes dashFlow {
+  to { stroke-dashoffset: -240; }
+}
+
+.bg-dots {
+  position: absolute;
+  inset: 0;
+}
+
+.bg-dots span {
+  position: absolute;
+  bottom: -20px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 8px var(--accent-2);
+  opacity: 0;
+  animation-name: riseDot;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes riseDot {
+  0%   { transform: translate3d(0, 0, 0) scale(0.6); opacity: 0; }
+  15%  { opacity: 0.7; }
+  85%  { opacity: 0.7; }
+  100% { transform: translate3d(20px, -100vh, 0) scale(1); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   WORKING — pipeline streams + pulsing rings
+   ═══════════════════════════════════════════════════════════ */
+
+.bg-streams {
+  position: absolute;
+  inset: 0;
+}
+
+.bg-stream {
+  position: absolute;
+  top: -10%;
+  height: 120%;
+  width: 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  opacity: 0.7;
+  animation-name: streamShift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+.bg-stream::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  margin-left: 0.5px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    var(--line-strong) 20%,
+    var(--line-strong) 80%,
+    transparent 100%);
+  opacity: 0.5;
+}
+
+.bg-stream span {
+  width: 4px;
+  height: 4px;
+  margin-left: -1px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 10px var(--accent-2);
+  animation: streamDot 4s linear infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes streamDot {
+  0%   { transform: translateY(-40px) scale(0.5); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(80px) scale(1); opacity: 0; }
+}
+
+@keyframes streamShift {
+  0%   { transform: translateX(-8px); }
+  100% { transform: translateX(8px); }
+}
+
+.bg-rings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+}
+
+.bg-ring {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 1;
+  opacity: 0.4;
+  transform-origin: 720px 450px;
+  animation: ringPulse 8s ease-in-out infinite;
+}
+.bg-ring-2 { animation-delay: 2s; stroke: var(--accent); }
+.bg-ring-3 { animation-delay: 4s; stroke: var(--accent-3); }
+
+@keyframes ringPulse {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(1.06); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BACKTEST — radar sweep + waves
+   ═══════════════════════════════════════════════════════════ */
+
+.bg-radar {
+  position: absolute;
+  top: 50%;
+  left: 62%;
+  width: 900px;
+  height: 900px;
+  transform: translate(-50%, -50%);
+  opacity: 0.45;
+}
+
+.bg-radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 78%,
+    rgba(255,122,200,0.14) 88%,
+    rgba(255,201,120,0.28) 97%,
+    transparent 100%
+  );
+  animation: radarSpin 9s linear infinite;
+  will-change: transform;
+}
+
+@keyframes radarSpin {
+  to { transform: rotate(360deg); }
+}
+
+.bg-radar-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  opacity: 0.5;
+}
+.bg-radar-ring-1 { inset: 30%; }
+.bg-radar-ring-2 { inset: 15%; opacity: 0.35; }
+.bg-radar-ring-3 { inset: 0;  opacity: 0.22; }
+
+.bg-radar-cross {
+  position: absolute;
+  background: var(--line-strong);
+  opacity: 0.35;
+}
+.bg-radar-cross-h {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+.bg-radar-cross-v {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+
+.bg-waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.7;
+}
+
+.bg-wave {
+  animation: waveShift 14s ease-in-out infinite;
+  transform-origin: center;
+}
+.bg-wave-1 { animation-duration: 12s; }
+.bg-wave-2 { animation-duration: 16s; animation-delay: 0.8s; }
+.bg-wave-3 { animation-duration: 20s; animation-delay: 1.6s; }
+
+@keyframes waveShift {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-40px); }
+}
+
+/* ─── Reduced motion ────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-aurora,
+  .bg-arc,
+  .bg-dots span,
+  .bg-stream,
+  .bg-stream span,
+  .bg-ring,
+  .bg-radar-sweep,
+  .bg-wave {
+    animation: none !important;
+  }
+}
+/* ═════════════════════════════════════════════════════════════
+   Page backgrounds — dynamic per route
+   ═════════════════════════════════════════════════════════════ */
+
+.page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 600ms var(--ease);
+}
+
+/* Kill the old body::before since PageBackground replaces it */
+body::before { display: none !important; }
+body::after  { display: none !important; }
+
+/* ─── Aurora wash (tinted per page) ─────────────────────────── */
+
+.bg-aurora {
+  position: absolute;
+  inset: -30%;
+  filter: blur(6px);
+  animation: aurora 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.page-bg-index .bg-aurora {
+  background:
+    radial-gradient(700px circle at 15% 15%, rgba(139,107,255,0.28), transparent 55%),
+    radial-gradient(800px circle at 85% 10%, rgba(41,217,238,0.20), transparent 55%),
+    radial-gradient(900px circle at 50% 110%, rgba(255,122,200,0.18), transparent 60%);
+}
+
+.page-bg-working .bg-aurora {
+  background:
+    radial-gradient(720px circle at 20% 30%, rgba(41,217,238,0.24), transparent 55%),
+    radial-gradient(820px circle at 80% 75%, rgba(123,255,217,0.18), transparent 55%),
+    radial-gradient(700px circle at 50% 5%, rgba(139,107,255,0.20), transparent 60%);
+  animation-duration: 38s;
+}
+
+.page-bg-backtest .bg-aurora {
+  background:
+    radial-gradient(720px circle at 70% 25%, rgba(255,122,200,0.24), transparent 55%),
+    radial-gradient(820px circle at 25% 80%, rgba(255,201,120,0.20), transparent 55%),
+    radial-gradient(700px circle at 50% 50%, rgba(139,107,255,0.14), transparent 60%);
+  animation-duration: 34s;
+}
+
+/* ─── Grain overlay ─────────────────────────────────────────── */
+
+.bg-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INDEX — arcing flight paths + rising dots
+   ═══════════════════════════════════════════════════════════ */
+
+.bg-arcs {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
+}
+
+.bg-arc {
+  animation: dashFlow 12s linear infinite;
+}
+.bg-arc-1 { animation-duration: 14s; }
+.bg-arc-2 { animation-duration: 18s; animation-direction: reverse; }
+.bg-arc-3 { animation-duration: 22s; }
+
+@keyframes dashFlow {
+  to { stroke-dashoffset: -240; }
+}
+
+.bg-dots {
+  position: absolute;
+  inset: 0;
+}
+
+.bg-dots span {
+  position: absolute;
+  bottom: -20px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 8px var(--accent-2);
+  opacity: 0;
+  animation-name: riseDot;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes riseDot {
+  0%   { transform: translate3d(0, 0, 0) scale(0.6); opacity: 0; }
+  15%  { opacity: 0.7; }
+  85%  { opacity: 0.7; }
+  100% { transform: translate3d(20px, -100vh, 0) scale(1); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   WORKING — pipeline streams + pulsing rings
+   ═══════════════════════════════════════════════════════════ */
+
+.bg-streams {
+  position: absolute;
+  inset: 0;
+}
+
+.bg-stream {
+  position: absolute;
+  top: -10%;
+  height: 120%;
+  width: 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  opacity: 0.7;
+  animation-name: streamShift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+.bg-stream::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  margin-left: 0.5px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    var(--line-strong) 20%,
+    var(--line-strong) 80%,
+    transparent 100%);
+  opacity: 0.5;
+}
+
+.bg-stream span {
+  width: 4px;
+  height: 4px;
+  margin-left: -1px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 10px var(--accent-2);
+  animation: streamDot 4s linear infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes streamDot {
+  0%   { transform: translateY(-40px) scale(0.5); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(80px) scale(1); opacity: 0; }
+}
+
+@keyframes streamShift {
+  0%   { transform: translateX(-8px); }
+  100% { transform: translateX(8px); }
+}
+
+.bg-rings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+}
+
+.bg-ring {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 1;
+  opacity: 0.4;
+  transform-origin: 720px 450px;
+  animation: ringPulse 8s ease-in-out infinite;
+}
+.bg-ring-2 { animation-delay: 2s; stroke: var(--accent); }
+.bg-ring-3 { animation-delay: 4s; stroke: var(--accent-3); }
+
+@keyframes ringPulse {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(1.06); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BACKTEST — radar sweep + waves
+   ═══════════════════════════════════════════════════════════ */
+
+.bg-radar {
+  position: absolute;
+  top: 50%;
+  left: 62%;
+  width: 900px;
+  height: 900px;
+  transform: translate(-50%, -50%);
+  opacity: 0.45;
+}
+
+.bg-radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 78%,
+    rgba(255,122,200,0.14) 88%,
+    rgba(255,201,120,0.28) 97%,
+    transparent 100%
+  );
+  animation: radarSpin 9s linear infinite;
+  will-change: transform;
+}
+
+@keyframes radarSpin {
+  to { transform: rotate(360deg); }
+}
+
+.bg-radar-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  opacity: 0.5;
+}
+.bg-radar-ring-1 { inset: 30%; }
+.bg-radar-ring-2 { inset: 15%; opacity: 0.35; }
+.bg-radar-ring-3 { inset: 0;  opacity: 0.22; }
+
+.bg-radar-cross {
+  position: absolute;
+  background: var(--line-strong);
+  opacity: 0.35;
+}
+.bg-radar-cross-h {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+.bg-radar-cross-v {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+
+.bg-waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.7;
+}
+
+.bg-wave {
+  animation: waveShift 14s ease-in-out infinite;
+  transform-origin: center;
+}
+.bg-wave-1 { animation-duration: 12s; }
+.bg-wave-2 { animation-duration: 16s; animation-delay: 0.8s; }
+.bg-wave-3 { animation-duration: 20s; animation-delay: 1.6s; }
+
+@keyframes waveShift {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-40px); }
+}
+
+/* ─── Reduced motion ────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-aurora,
+  .bg-arc,
+  .bg-dots span,
+  .bg-stream,
+  .bg-stream span,
+  .bg-ring,
+  .bg-radar-sweep,
+  .bg-wave {
+    animation: none !important;
+  }
+}
+/* ═════════════════════════════════════════════════════════════
+   FlightPath v2 — progress rail + cleaner stacking
+   ═════════════════════════════════════════════════════════════ */
+
+.fp-rail {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 5%;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow: visible;
+  z-index: 5;
+}
+.fp-rail-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  background: var(--grad-line);
+  border-radius: 999px;
+  box-shadow: 0 0 12px var(--accent-2);
+}
+.fp-rail-marks {
+  position: absolute;
+  inset: 0;
+}
+.fp-rail-mark {
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--bg-0);
+  border: 1px solid var(--accent-2);
+  box-shadow: 0 0 8px var(--accent-2);
+}
+.fp-rail-hint {
+  position: absolute;
+  right: 0;
+  top: -26px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.8;
+  animation: hintPulse 2s ease-in-out infinite;
+}
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.4; transform: translateX(0); }
+  50%      { opacity: 0.9; transform: translateX(4px); }
+}
+
+/* ═════════════════════════════════════════════════════════════
+   Working v2 — tighter spacing, grouped stack
+   ═════════════════════════════════════════════════════════════ */
+
+/* Cards inside Working get a bit more air between them */
+.main > .card {
+  margin-bottom: var(--sp-5) !important;
+}
+
+/* Pipeline — give cards a consistent min-height so rows align */
+.stage {
+  min-height: 200px !important;
+}
+.stage-body {
+  margin-top: 4px;
+}
+
+/* Tier list gets extra breathing room between cards */
+.tier-list > div + div {
+  margin-top: 0;
+}
+.tier {
+  padding: 26px 26px 22px !important;
+}
+.tier-name {
+  font-size: 22px !important;
+}
+.tier-body {
+  font-size: 13.5px !important;
+  line-height: 1.7 !important;
+}
+
+/* ─── Stack groups ──────────────────────────────────────── */
+
+.stack-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.stack-group {
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.015);
+}
+
+.stack-group-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,0.025);
+  position: relative;
+}
+.stack-group-head::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+.stack-group-head.stack-violet::before { background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+.stack-group-head.stack-cyan::before   { background: var(--accent-2); box-shadow: 0 0 12px var(--accent-2); }
+.stack-group-head.stack-mint::before   { background: var(--accent-mint); box-shadow: 0 0 12px var(--accent-mint); }
+.stack-group-head.stack-pink::before   { background: var(--accent-3); box-shadow: 0 0 12px var(--accent-3); }
+.stack-group-head.stack-gold::before   { background: var(--accent-gold); box-shadow: 0 0 12px var(--accent-gold); }
+
+.stack-group-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.stack-group-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.stack-group-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0;
+}
+
+.stack-item {
+  padding: 16px 18px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-right: 1px solid var(--line) !important;
+  border-bottom: 1px solid var(--line) !important;
+  transition: all var(--dur) var(--ease) !important;
+  position: relative;
+}
+.stack-item:hover {
+  background: rgba(255,255,255,0.04) !important;
+  transform: none !important;
+}
+.stack-item:hover .stack-name {
+  color: var(--accent-2);
+}
+.stack-name {
+  font-size: 15px !important;
+  margin-bottom: 4px !important;
+  transition: color var(--dur) var(--ease);
+}
+.stack-role {
+  font-size: 12px !important;
+}
+.stack-cat { display: none; }
