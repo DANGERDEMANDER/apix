@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>IndiGo - Select Your Flight</title>
+    <script>
+      // Recorded sample of IndiGo's preloaded flight state. In the live
+      // site this is populated by the app's data layer. Replay mode and
+      // tests read this file; no network is touched.
+      window.__INITIAL_STATE__ = {
+        "search": {
+          "origin": "DEL",
+          "destination": "BOM",
+          "departureDate": "2025-09-16",
+          "currency": "INR"
+        },
+        "flights": [
+          {
+            "flightNumber": "6E 1234",
+            "aircraft": "A320",
+            "departureTime": "06:30",
+            "arrivalTime": "08:45",
+            "fareClass": "ECONOMY",
+            "baseFare": 4280,
+            "taxes": 512,
+            "udf": 249,
+            "totalFare": 5041
+          },
+          {
+            "flightNumber": "6E 2167",
+            "aircraft": "A321neo",
+            "departureTime": "10:15",
+            "arrivalTime": "12:30",
+            "fareClass": "ECONOMY",
+            "baseFare": 4520,
+            "taxes": 526,
+            "udf": 249,
+            "totalFare": 5295
+          },
+          {
+            "flightNumber": "6E 5301",
+            "aircraft": "A320",
+            "departureTime": "18:45",
+            "arrivalTime": "21:00",
+            "fareClass": "ECONOMY",
+            "baseFare": 3890,
+            "taxes": 494,
+            "udf": 249,
+            "totalFare": 4633
+          }
+        ]
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root">IndiGo flight search results render here.</div>
+  </body>
+</html>

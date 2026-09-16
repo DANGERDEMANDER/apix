@@ -2,8 +2,7 @@
 
 Stock Playwright + Firefox. No anti-detection tooling, no stealth patches,
 no CAPTCHA solving. When a source serves a challenge page, the fetch raises
-BlockedError and the caller falls back to replay mode. This is the compliant
-subset documented in ETHICS.md.
+BlockedError and the caller falls back to replay mode.
 """
 
 from __future__ import annotations
@@ -11,9 +10,16 @@ from __future__ import annotations
 from types import TracebackType
 from typing import Self
 
-from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+from playwright.async_api import (
+    Browser,
+    BrowserContext,
+    Page,
+    Playwright,
+    ViewportSize,
+    async_playwright,
+)
 
-_DEFAULT_VIEWPORT = {"width": 1366, "height": 900}
+_VIEWPORT: ViewportSize = {"width": 1366, "height": 900}
 
 
 class PlaywrightSession:
@@ -29,21 +35,24 @@ class PlaywrightSession:
         self._user_agent = user_agent
         self._headless = headless
         self._timeout_ms = navigation_timeout_ms
-        self._pw = None
+        self._pw: Playwright | None = None
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
 
     async def __aenter__(self) -> Self:
-        self._pw = await async_playwright().start()
-        self._browser = await self._pw.firefox.launch(headless=self._headless)
-        self._context = await self._browser.new_context(
+        pw = await async_playwright().start()
+        browser = await pw.firefox.launch(headless=self._headless)
+        context = await browser.new_context(
             user_agent=self._user_agent,
-            viewport=_DEFAULT_VIEWPORT,
+            viewport=_VIEWPORT,
             locale="en-IN",
             timezone_id="Asia/Kolkata",
             java_script_enabled=True,
         )
-        self._context.set_default_navigation_timeout(self._timeout_ms)
+        context.set_default_navigation_timeout(self._timeout_ms)
+        self._pw = pw
+        self._browser = browser
+        self._context = context
         return self
 
     async def __aexit__(
@@ -71,19 +80,19 @@ class PlaywrightSession:
         *,
         wait_for_selector: str | None = None,
     ) -> str:
-        """Navigate to url and return the rendered HTML.
-
-        When wait_for_selector is given, waits for the selector to appear
-        before returning. That is how we confirm the fare table rendered
-        rather than returning a loading skeleton.
-        """
-        if self._context is None:
-            raise RuntimeError("session not started; use `async with PlaywrightSession(...)`")
-        page: Page = await self._context.new_page()
+        """Navigate to url and return the rendered HTML."""
+        ctx = self._context
+        if ctx is None:
+            raise RuntimeError(
+                "session not started; use `async with PlaywrightSession(...)`"
+            )
+        page: Page = await ctx.new_page()
         try:
             await page.goto(url, wait_until="domcontentloaded")
             if wait_for_selector is not None:
-                await page.wait_for_selector(wait_for_selector, timeout=self._timeout_ms)
+                await page.wait_for_selector(
+                    wait_for_selector, timeout=self._timeout_ms
+                )
             return await page.content()
         finally:
             await page.close()
